@@ -150,3 +150,11 @@ This task demonstrated:
 - `whoami /groups`
 - Access-control troubleshooting
 - Positive and negative verification
+
+## Screenshots
+
+### Finance Users and Security Group
+
+The following screenshot shows the Active Directory users and security-group structure used to manage Finance department access.
+
+![Finance Users and Security Group](../screenshots/active-directory/finance-users-group.png)

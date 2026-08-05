@@ -528,3 +528,17 @@ Final testing confirmed that `HR_Users` was recognized by the workstation, the H
 - Root-cause analysis
 - Authentication troubleshooting
 - Verification after remediation
+
+## Screenshots
+
+### HR Group Membership Verification
+
+The following screenshot shows the output of `whoami /groups`, confirming that the user's current Windows security token contains membership in the `HR_Users` Active Directory security group.
+
+![whoami /groups Output](../screenshots/troubleshooting/whoami-groups-hr.png)
+
+### Network Drive Verification
+
+The following screenshot shows the output of `net use`, verifying that the H: drive is successfully mapped to the HR departmental share.
+
+![net use Output](../screenshots/troubleshooting/net-use-hr.png)

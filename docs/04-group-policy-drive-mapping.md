@@ -159,3 +159,11 @@ gpupdate /force
 whoami /groups
 Centralized resource deployment
 Positive and negative testing
+
+## Screenshots
+
+### Finance Drive Mapping Group Policy
+
+The following screenshot shows the Group Policy Preferences configuration used to deploy the Finance F: drive to authorized Finance users.
+
+![Finance Drive Mapping GPO](../screenshots/group-policy/finance-drive-mapping-gpo.png)

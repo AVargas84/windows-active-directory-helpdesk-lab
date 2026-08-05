@@ -47,3 +47,11 @@ The logged-in identity was verified from CLIENT01 using:
 
 ```cmd
 whoami
+
+## Screenshots
+
+### Active Directory Domain Structure
+
+The following screenshot shows the Active Directory Users and Computers environment used for the `adrianlab.local` domain, including the organizational structure created for the help desk lab.
+
+![Active Directory Domain Structure](../screenshots/active-directory/aduc-domain-structure.png)
