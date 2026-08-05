@@ -1,110 +1,110 @@
-# Missing Department Drive Troubleshooting
+# Missing Mapped Drive Troubleshooting
 
-## Scenario
+## Overview
 
-Sarah Johnson, an employee in the HR department, reported that her HR network drive was no longer available.
+This exercise demonstrates how to troubleshoot a departmental network drive that is missing from a user's Windows workstation.
 
-The user reported:
+An HR user reported that the HR H: drive was no longer available on CLIENT01. Because the drive was deployed through Group Policy Preferences using Active Directory security-group targeting, troubleshooting focused on the user's current network connections, security-group membership, and Group Policy processing.
 
-> "My HR drive was working yesterday, but today it's missing. I need access to my department files."
-
-The expected HR resource was:
-
-```text
-H: → \\DC01\HR
-```
-
-The HR drive had previously worked correctly, so the goal was to troubleshoot the problem systematically rather than immediately recreating the drive mapping or changing permissions.
+---
 
 ## Objective
 
-Diagnose and resolve a missing departmental network drive by:
+Identify why an authorized HR employee was missing the H: drive, correct the underlying Active Directory configuration, and verify that the mapped drive and HR files became available again.
 
-- Verifying the user's current security-group memberships
-- Checking existing network-drive mappings
-- Identifying whether the issue involved Active Directory, Group Policy, networking, or permissions
-- Correcting only the affected component
-- Refreshing the user's authentication session
-- Verifying that the original problem was resolved
+---
 
-## User Information
+## Lab Environment
 
-The affected user was:
+| Component | Configuration |
+|-----------|---------------|
+| Domain Controller | DC01 |
+| Client Workstation | CLIENT01 |
+| Domain | adrianlab.local |
+| Department | HR |
+| Security Group | ADRIANLAB\HR_Users |
+| HR Share | \\DC01\HR |
+| Mapped Drive | H: |
+| Drive Deployment | Group Policy Preferences |
+| Targeting Method | Security Group Membership |
 
-```text
-Name: Sarah Johnson
-Department: HR
-Computer: CLIENT01
-Domain: ADRIANLAB
-```
+---
 
-Sarah was expected to be a member of:
+## Reported Issue
 
-```text
-ADRIANLAB\HR_Users
-```
-
-Members of this group were expected to receive:
+The HR user signed into CLIENT01 but the expected departmental drive:
 
 ```text
-H: → \\DC01\HR
+HR (H:)
 ```
 
-through Group Policy Preferences.
+did not appear in File Explorer.
 
-## Expected Access Model
+The HR share and Group Policy configuration had previously worked, so the problem required troubleshooting rather than rebuilding the environment.
 
-The existing HR configuration followed this model:
+---
+
+## Troubleshooting Approach
+
+The investigation followed a layered process:
 
 ```text
-Sarah Johnson
-        ↓
-HR_Users
-        ↓
- ┌────────────────────────────┐
- ↓                            ↓
-SMB/NTFS authorization        GPO item-level targeting
- ↓                            ↓
-Access to \\DC01\HR           H: drive mapping
+Missing H: Drive
+      |
+      v
+Check mapped drives
+      |
+      v
+Check user identity and group membership
+      |
+      v
+Verify Active Directory membership
+      |
+      v
+Correct configuration
+      |
+      v
+Refresh authentication and Group Policy
+      |
+      v
+Verify H: drive and file access
 ```
 
-Because both resource authorization and drive deployment depended on `HR_Users`, group membership was an important troubleshooting point.
+This approach avoided immediately modifying the GPO or file-share permissions before identifying the actual cause.
 
-## Known-Good Baseline
+---
 
-Before the troubleshooting scenario was introduced, Sarah's HR access was verified.
+## Step 1: Check Current Network Connections
 
-Sarah successfully:
-
-```text
-Logged into CLIENT01
-Was recognized as a member of HR_Users
-Received the H: drive
-Opened HR-Test.txt
-```
-
-This established that the HR infrastructure, share, permissions, and Group Policy configuration were working before the incident.
-
-## Initial Troubleshooting Decision
-
-The first troubleshooting commands selected were:
+On CLIENT01, the following command was used:
 
 ```cmd
-whoami /groups
 net use
 ```
 
-These commands were chosen because they answer two different questions.
+This displays the network connections and mapped drives recognized by the current Windows session.
 
-`whoami /groups` determines which Active Directory security groups are recognized in the user's current Windows security token.
+The expected H: drive was not present.
 
-`net use` displays the user's current network-drive mappings and their connection status.
+This confirmed that the issue was not simply a File Explorer display problem; the drive mapping itself was missing from the current session.
 
-This allowed the investigation to begin with the user's current authorization and mapped-drive state rather than immediately changing server configuration.
+---
 
-## Security Group Investigation
+## Step 2: Verify User Identity
 
-The following command was run on CLIENT01 while logged in as Sarah:
+The logged-in domain identity can be confirmed using:
+
+```cmd
+whoami
+```
+
+This helps ensure troubleshooting is being performed under the correct domain account.
+
+---
+
+## Step 3: Check Security Group Membership
+
+Because the HR drive mapping used security-group-based item-level targeting, the user's current group memberships were checked using:
 
 ```cmd
 whoami /groups
@@ -116,429 +116,267 @@ The expected group was:
 ADRIANLAB\HR_Users
 ```
 
-After the user's authentication session was refreshed, `HR_Users` was missing from the output.
+However, `HR_Users` did not appear in the user's current security-group list.
 
-This was a major troubleshooting clue.
+This was an important finding because the HR Group Policy Preference depended on membership in this group.
 
-Because the required HR security group was absent from Sarah's current security token, the investigation shifted toward Active Directory group membership.
-
-## Why the Missing Group Was Important
-
-The HR environment used `HR_Users` for two purposes.
-
-First, the group was used for authorization to the HR shared folder.
-
-Second, the HR Drive Mapping Group Policy used item-level targeting based on membership in the same group.
-
-The configuration was:
-
-```text
-HR_Users
-    ↓
-SMB/NTFS permissions
-    ↓
-HR folder access
-```
-
-and:
-
-```text
-HR_Users
-    ↓
-GPO item-level targeting
-    ↓
-H: drive mapping
-```
-
-Therefore, a missing `HR_Users` membership could affect both the user's actual HR permissions and the automatic H: drive mapping.
-
-## Active Directory Investigation
-
-Because `whoami /groups` showed that the required security group was missing, Sarah's account was investigated on DC01.
-
-The following location was checked:
-
-```text
-Active Directory Users and Computers
-→ Sarah Johnson
-→ Properties
-→ Member Of
-```
-
-The investigation confirmed that Sarah was not currently a member of:
-
-```text
-HR_Users
-```
+---
 
 ## Root Cause
 
-The root cause of the incident was:
+The investigation identified the root cause:
+
+> The affected user was no longer a member of the `HR_Users` Active Directory security group.
+
+The HR drive mapping was configured with item-level targeting similar to:
 
 ```text
-Sarah Johnson was missing membership in the HR_Users Active Directory security group.
+User is a member of:
+ADRIANLAB\HR_Users
 ```
 
-Because the environment used security-group-based access control, losing this membership prevented Sarah from receiving the expected HR resources.
+Without that membership, the user did not satisfy the Group Policy targeting condition.
 
-The problem was not caused by:
+As a result, Windows did not provide the H: drive mapping.
+
+---
+
+## Corrective Action
+
+On DC01, **Active Directory Users and Computers** was opened.
+
+The affected user account was located and the missing security-group membership was restored:
 
 ```text
-DNS
-Network connectivity
-The HR SMB share
-NTFS permissions
-The HR Drive Mapping GPO configuration
-CLIENT01 network settings
+ADRIANLAB\HR_Users
 ```
 
-The troubleshooting evidence pointed directly to the user's Active Directory authorization.
-
-## Resolution
-
-Sarah's account was repaired through:
+The membership was verified through the user's:
 
 ```text
-Active Directory Users and Computers
-→ Sarah Johnson
-→ Properties
+Properties
 → Member Of
-→ Add
 ```
 
-The following group was entered:
+tab.
 
-```text
-HR_Users
-```
+---
 
-The group name was validated using:
+## Refreshing the User Security Token
 
-```text
-Check Names
-```
+After the Active Directory membership was corrected, the user signed completely out of CLIENT01 and signed back in.
 
-After the name resolved successfully, the membership change was applied.
+This step was necessary because Windows creates a security token when the user authenticates.
 
-Sarah was once again a member of:
+The token contains information including:
 
-```text
-ADRIANLAB\HR_Users
-```
+- User identity
+- Security-group memberships
+- Security identifiers
+- Authorization information
 
-## Security Token Refresh
+Adding the user back to `HR_Users` in Active Directory does not necessarily update an already authenticated session.
 
-Changing Active Directory group membership does not necessarily update an already authenticated Windows session immediately.
+Signing out and back in generated a new security token containing the restored HR membership.
 
-Windows creates a security token when a user authenticates.
+---
 
-The token contains information such as:
+## Verify Restored Group Membership
 
-```text
-User identity
-Security-group memberships
-Security identifiers
-Authorization information
-```
-
-Because Sarah's group membership had changed, she completely signed out of CLIENT01 and signed back in.
-
-This caused Windows to generate a fresh security token containing the restored `HR_Users` membership.
-
-## Group Membership Verification
-
-After Sarah signed back into CLIENT01, the following command was run again:
+After signing back into CLIENT01, the following command was run again:
 
 ```cmd
 whoami /groups
 ```
 
-The output now contained:
+This time the output contained:
 
 ```text
 ADRIANLAB\HR_Users
 ```
 
-**Group Membership Result: PASS**
+**Security Group Verification: ✅ PASS**
 
-This confirmed that Sarah's current Windows session recognized the corrected Active Directory membership.
+This confirmed that the user's current Windows session recognized the corrected Active Directory membership.
 
-## Drive Mapping Verification
+---
 
-File Explorer was opened to:
+## Group Policy Refresh
 
-```text
-This PC
-```
-
-The HR mapped drive returned:
-
-```text
-HR (H:)
-```
-
-The drive pointed to:
-
-```text
-\\DC01\HR
-```
-
-**Drive Mapping Result: PASS**
-
-## File Access Verification
-
-Sarah opened the H: drive and successfully accessed:
-
-```text
-HR-Test.txt
-```
-
-This confirmed that the repair restored actual access to the HR departmental resource.
-
-**File Access Result: PASS**
-
-## Troubleshooting Sequence
-
-The incident was resolved using the following process:
-
-```text
-User reports missing H: drive
-        ↓
-Check current group membership
-        ↓
-whoami /groups
-        ↓
-HR_Users missing
-        ↓
-Check Active Directory account
-        ↓
-HR_Users membership missing
-        ↓
-Restore group membership
-        ↓
-Sign user out and back in
-        ↓
-Generate fresh security token
-        ↓
-Verify HR_Users membership
-        ↓
-Verify H: drive
-        ↓
-Verify HR file access
-```
-
-## Troubleshooting Methodology
-
-This ticket followed the troubleshooting model:
-
-```text
-Identify
-    ↓
-Test
-    ↓
-Isolate
-    ↓
-Correct
-    ↓
-Verify
-```
-
-### Identify
-
-The user's reported symptom was a missing HR mapped drive.
-
-### Test
-
-The user's current security groups and network-drive state were investigated.
-
-### Isolate
-
-`whoami /groups` showed that the required `HR_Users` group was missing.
-
-Active Directory Users and Computers confirmed that the user's account was missing the required group membership.
-
-### Correct
-
-Sarah was added back to `HR_Users`.
-
-### Verify
-
-Sarah signed out and back in.
-
-The group membership returned, the H: drive appeared, and `HR-Test.txt` opened successfully.
-
-## Why Unrelated Settings Were Not Changed
-
-The troubleshooting process avoided immediately modifying:
-
-```text
-The HR GPO
-The H: drive configuration
-NTFS permissions
-SMB share permissions
-DNS
-CLIENT01 networking
-DC01 networking
-```
-
-Changing several components simultaneously could have made it difficult to determine which change actually resolved the incident.
-
-Instead, troubleshooting followed the available evidence and corrected only the component that was actually misconfigured.
-
-## Group Policy and Authorization
-
-This incident also demonstrated the difference between Group Policy deployment and resource authorization.
-
-The HR Drive Mapping GPO used:
-
-```text
-ADRIANLAB\HR_Users
-```
-
-for item-level targeting.
-
-The HR folder permissions also relied on:
-
-```text
-ADRIANLAB\HR_Users
-```
-
-Therefore, the same Active Directory security group supported two different functions:
-
-```text
-HR_Users
-    ↓
-GPO targeting
-    ↓
-H: appears
-```
-
-and:
-
-```text
-HR_Users
-    ↓
-SMB + NTFS permissions
-    ↓
-HR data is accessible
-```
-
-The mapped drive itself did not create authorization.
-
-The security group and underlying file permissions controlled access to the HR data.
-
-## Commands Used
-
-The primary troubleshooting commands used during this incident were:
-
-```cmd
-whoami /groups
-net use
-```
-
-Group Policy could also be manually refreshed when necessary using:
+The latest Group Policy configuration was then processed using:
 
 ```cmd
 gpupdate /force
 ```
 
+Because the user now satisfied the `HR_Users` item-level targeting condition, the HR drive mapping could be applied.
+
+---
+
+## Verify the Mapped Drive
+
+The current network connections were checked again:
+
+```cmd
+net use
+```
+
+The HR mapping returned:
+
+```text
+H:    \\DC01\HR
+```
+
+File Explorer also displayed:
+
+```text
+HR (H:)
+```
+
+**Mapped Drive Verification: ✅ PASS**
+
+---
+
+## Verify File Access
+
+The H: drive was opened and the HR departmental files were available.
+
+The user successfully accessed:
+
+```text
+HR-Test.txt
+```
+
+This confirmed that both the mapped drive and the underlying HR share permissions were functioning.
+
+**HR File Access: ✅ PASS**
+
+---
+
 ## Verification Summary
 
-The completed repair was verified as follows:
+| Test | Expected Result | Actual Result |
+|------|-----------------|---------------|
+| Initial `net use` | H: missing | ✅ Confirmed |
+| Initial `whoami /groups` | HR_Users missing | ✅ Confirmed |
+| AD membership corrected | HR_Users restored | ✅ Pass |
+| New login session | Updated token | ✅ Pass |
+| `whoami /groups` | HR_Users appears | ✅ Pass |
+| `gpupdate /force` | Policy refreshes | ✅ Pass |
+| Final `net use` | H: mapped | ✅ Pass |
+| HR H: drive | Available | ✅ Pass |
+| HR-Test.txt | Accessible | ✅ Pass |
+
+---
+
+## Why the GPO Was Not the Root Cause
+
+A missing mapped drive does not automatically mean the Group Policy Object is broken.
+
+The GPO was configured to provide the H: drive only when this condition was true:
 
 ```text
-Sarah authenticated to ADRIANLAB: PASS
-HR_Users membership restored: PASS
-HR_Users visible in whoami /groups: PASS
-H: drive returned: PASS
-HR share accessible: PASS
-HR-Test.txt accessible: PASS
+User ∈ HR_Users
 ```
 
-## Root Cause Summary
+The GPO was therefore behaving correctly.
 
-```text
-Problem:
-HR mapped drive unavailable
+The actual problem was that the user no longer met the targeting condition.
 
-Root Cause:
-User missing from HR_Users security group
+This distinction prevented unnecessary changes to a working Group Policy configuration.
 
-Resolution:
-Restored HR_Users membership
+---
 
-Session Requirement:
-User signed out and back in to obtain a fresh security token
+## Troubleshooting Commands Used
 
-Verification:
-HR_Users returned, H: mapped, and HR files were accessible
+```cmd
+whoami
+whoami /groups
+net use
+gpupdate /force
 ```
 
-## Security Concepts
+### `whoami`
 
-This task demonstrated:
+Confirms the identity of the currently authenticated user.
 
-- Role-based access control
-- Active Directory security groups
-- Security-group-based authorization
-- Windows security tokens
-- Least privilege
-- Group Policy item-level targeting
-- Positive access verification
-- Root-cause troubleshooting
+### `whoami /groups`
 
-## Help Desk Skills Demonstrated
+Displays the security groups contained in the current user's Windows security token.
 
-This incident required:
+### `net use`
 
-- Gathering information from the user's workstation
-- Selecting appropriate diagnostic commands
-- Interpreting command output
-- Isolating the failing layer
-- Investigating Active Directory
-- Correcting account authorization
-- Refreshing the authentication session
-- Verifying the user's original problem was resolved
-- Avoiding unnecessary configuration changes
+Displays current network connections and mapped network drives.
 
-## Ticket Resolution
+### `gpupdate /force`
 
-Sarah Johnson's missing HR network drive was traced to missing membership in the `HR_Users` Active Directory security group.
+Forces Windows to process the latest Group Policy settings.
 
-The problem was identified using `whoami /groups`, confirmed in Active Directory Users and Computers, and corrected by restoring Sarah's `HR_Users` membership.
+---
 
-Sarah then signed out and back into CLIENT01 to obtain a fresh security token.
+## Technologies Used
 
-Final testing confirmed that `HR_Users` was recognized by the workstation, the H: drive returned, and Sarah successfully accessed `HR-Test.txt`.
-
-## Concepts Practiced
-
+- Windows Server
+- Active Directory Domain Services
 - Active Directory Users and Computers
-- Active Directory security groups
-- Group membership troubleshooting
-- Windows security tokens
-- `whoami /groups`
-- `net use`
-- `gpupdate /force`
+- Active Directory Security Groups
 - Group Policy Preferences
-- Item-level targeting
-- Mapped network drives
-- Role-based access control
-- Help Desk troubleshooting
-- Root-cause analysis
-- Authentication troubleshooting
-- Verification after remediation
+- Item-Level Targeting
+- SMB File Sharing
+- Windows 11
+- Oracle VirtualBox
+
+---
+
+## Skills Demonstrated
+
+- Help Desk Troubleshooting
+- Active Directory Administration
+- Security Group Troubleshooting
+- Group Policy Troubleshooting
+- Mapped Network Drive Troubleshooting
+- Windows Security Tokens
+- Command-Line Diagnostics
+- Root-Cause Analysis
+- Verification and Testing
+- Least-Privilege Access Management
+
+---
 
 ## Screenshots
 
-### HR Group Membership Verification
+### Restored HR Drive
 
-The following screenshot shows the output of `whoami /groups`, confirming that the user's current Windows security token contains membership in the `HR_Users` Active Directory security group.
+The following screenshot shows the HR H: drive available on CLIENT01 after the user's `HR_Users` membership and Windows session were corrected.
 
-![whoami /groups Output](../screenshots/troubleshooting/whoami-groups-hr.png)
+![HR Mapped Drive](../screenshots/group-policy/hr-mapped-drive.png)
 
-### Network Drive Verification
+*Figure 1. HR H: drive successfully restored on CLIENT01.*
 
-The following screenshot shows the output of `net use`, verifying that the H: drive is successfully mapped to the HR departmental share.
+### HR Share Verification
 
-![net use Output](../screenshots/troubleshooting/net-use-hr.png)
+The HR departmental share was successfully accessible after the drive mapping was restored.
+
+![HR Shared Folder](../screenshots/file-sharing/hr-share-files.png)
+
+*Figure 2. HR files accessible through the restored H: drive.*
+
+---
+
+## Lessons Learned
+
+This exercise demonstrated the importance of troubleshooting mapped-drive problems systematically rather than immediately changing Group Policy.
+
+The H: drive was missing because the user no longer satisfied the security-group condition used by Group Policy item-level targeting. The GPO itself was functioning correctly.
+
+Commands such as `net use` and `whoami /groups` helped narrow the problem from a general "missing drive" complaint to a specific Active Directory membership issue.
+
+The exercise also reinforced the importance of Windows security tokens. Restoring group membership in Active Directory did not by itself guarantee that an existing Windows session would recognize the change. Signing out and back in generated a new token containing the corrected membership.
+
+Most importantly, the troubleshooting process followed a repeatable sequence:
+
+```text
+Observe → Verify → Isolate → Correct → Retest
+```
+
+Using this process reduces unnecessary configuration changes and helps identify the actual root cause of a user's problem.
