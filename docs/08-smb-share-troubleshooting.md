@@ -1,836 +1,511 @@
-# SMB Share and Disconnected Drive Troubleshooting
+# SMB Share Troubleshooting
 
-## Scenario
+## Overview
 
-Sarah Johnson, an employee in the HR department, reported that her HR mapped drive was unavailable.
+This exercise demonstrates how to troubleshoot a departmental network share that is no longer available to users even though Active Directory group membership and NTFS permissions are configured correctly.
 
-The user reported:
+An HR user reported that the HR network resource was unavailable on CLIENT01. Troubleshooting was performed from both the client workstation and domain controller to determine whether the problem involved connectivity, authentication, permissions, Group Policy, or the SMB share itself.
 
-> "My H: drive disappeared again. I restarted my computer, but I still can't access the HR folder."
-
-Sarah's Active Directory group membership had already been repaired during a previous incident, so the troubleshooting process did not assume that the same problem had occurred again.
-
-The expected HR resource was:
-
-```text
-H: → \\DC01\HR
-```
-
-The goal was to determine whether the failure involved the user's account, Group Policy, DNS, network connectivity, the mapped drive, the SMB share, or file permissions.
+---
 
 ## Objective
 
-Diagnose and resolve an unavailable departmental network drive by:
+Identify why the HR network share was unavailable, restore the server-side SMB share configuration, and verify that authorized HR users could once again access the departmental resource.
 
-- Checking the current network-drive status
-- Testing connectivity to the domain controller
-- Verifying DNS name resolution
-- Checking the SMB shares published by the server
-- Isolating the failure to the appropriate infrastructure layer
-- Restoring the affected service
-- Verifying the repair from the user's workstation
+---
 
-## User Information
+## Lab Environment
 
-The affected user was:
+| Component | Configuration |
+|-----------|---------------|
+| Domain Controller | DC01 |
+| Client Workstation | CLIENT01 |
+| Domain | adrianlab.local |
+| Department | HR |
+| Security Group | ADRIANLAB\HR_Users |
+| Local Folder | C:\Shares\HR |
+| Network Share | \\DC01\HR |
+| Mapped Drive | H: |
+| Drive Deployment | Group Policy Preferences |
 
-```text
-Name: Sarah Johnson
-Department: HR
-Computer: CLIENT01
-Domain: ADRIANLAB
-```
+---
 
-Sarah was already expected to have the correct HR authorization through:
+## Reported Issue
 
-```text
-ADRIANLAB\HR_Users
-```
+The HR user could no longer access the departmental network resource.
 
-The HR drive was expected to map as:
+The expected share was:
 
 ```text
-H: → \\DC01\HR
-```
-
-## Existing HR Infrastructure
-
-The HR environment had already been configured with:
-
-```text
-HR_Users
-    ↓
-SMB + NTFS permissions
-    ↓
 \\DC01\HR
 ```
 
-and:
+and the expected mapped drive was:
 
 ```text
-HR_Users
-    ↓
-Group Policy item-level targeting
-    ↓
-H: → \\DC01\HR
+HR (H:)
 ```
 
-Because the environment had previously worked, troubleshooting focused on identifying which layer had failed.
+Because several technologies work together to provide the resource, the issue could potentially involve:
 
-## Troubleshooting Strategy
+- Network connectivity
+- DNS
+- User authentication
+- Active Directory security-group membership
+- Group Policy
+- SMB sharing
+- NTFS permissions
 
-Rather than running every available command at once, the investigation was performed one step at a time.
+A layered troubleshooting process was used to isolate the problem.
 
-Each result was used to determine the next troubleshooting action.
+---
 
-The investigation followed this general path:
+## Troubleshooting Approach
+
+The investigation followed this sequence:
 
 ```text
-Mapped drive
-    ↓
-Network connectivity
-    ↓
-DNS resolution
-    ↓
-SMB service/share
-    ↓
-Share permissions
-    ↓
-NTFS permissions
+HR Resource Unavailable
+        |
+        v
+Check mapped connections
+        |
+        v
+Check available server shares
+        |
+        v
+Verify AD group membership
+        |
+        v
+Verify NTFS permissions
+        |
+        v
+Inspect SMB share configuration
+        |
+        v
+Restore sharing
+        |
+        v
+Retest from CLIENT01
 ```
 
-This made it possible to isolate the failure without unnecessarily changing unrelated settings.
+This prevented unnecessary changes to unrelated parts of the environment.
 
-## Step 1 - Check the Network Drive
+---
 
-The first troubleshooting command selected was:
+## Step 1: Check Current Network Connections
+
+On CLIENT01, the current network connections were reviewed using:
 
 ```cmd
 net use
 ```
 
-This command displays the user's current network connections and mapped drives.
+The HR H: drive was not available as expected.
 
-The result for the HR drive was:
+This established the client-side symptom but did not yet identify the cause.
 
-```text
-Disconnected   H:   \\DC01\HR   Microsoft Windows Network
+---
+
+## Step 2: Query Available Network Shares
+
+The following command was used from CLIENT01:
+
+```cmd
+net view \\DC01
 ```
 
-This was an important clue.
+`net view` queries the SMB resources currently being advertised by the remote computer.
 
-Windows still knew that H: should point to:
+The HR share did not appear in the list.
+
+This was an important troubleshooting result.
+
+If the HR folder had been actively published as:
 
 ```text
 \\DC01\HR
 ```
 
-but the workstation could not currently connect to the resource.
+it should have appeared among the available shares.
 
-## Interpretation of the Disconnected Drive
+The missing entry shifted the investigation toward the server-side SMB configuration.
 
-Because the H: mapping still existed, the investigation did not immediately recreate the Group Policy drive mapping.
+---
 
-The result suggested:
+## Step 3: Verify Security Group Membership
 
-```text
-Drive mapping exists
-        ↓
-Network resource cannot currently be reached
-```
-
-The next question was whether CLIENT01 could communicate with DC01 at all.
-
-## Step 2 - Test Connectivity to DC01
-
-The following command was run:
+Before changing permissions, the user's current security-group membership was checked using:
 
 ```cmd
-ping DC01
+whoami /groups
 ```
 
-The hostname successfully resolved to:
+The user was correctly recognized as a member of:
 
 ```text
-dc01.adrianlab.local
+ADRIANLAB\HR_Users
 ```
 
-with the IPv4 address:
+**Security Group Result: ✅ PASS**
+
+Because the required group membership was already present, the issue was unlikely to be caused by Active Directory authorization.
+
+---
+
+## Step 4: Verify the HR Folder
+
+On DC01, the local departmental folder still existed:
 
 ```text
-10.0.2.10
+C:\Shares\HR
 ```
 
-The ping results were:
+The HR data had not been deleted.
+
+This separated the availability of the underlying folder from its availability as a network resource.
+
+---
+
+## Step 5: Verify NTFS Permissions
+
+The HR folder's NTFS permissions were reviewed.
+
+The required HR security group was still configured:
 
 ```text
-Packets: Sent = 4
-Received = 4
-Lost = 0
-0% packet loss
+ADRIANLAB\HR_Users
 ```
 
-The replies were received in less than 1 millisecond.
+with the permissions needed to work with departmental files.
 
-**Connectivity Result: PASS**
+The NTFS configuration was therefore not the root cause.
 
-## DNS Verification
+**NTFS Permission Result: ✅ PASS**
 
-The successful command:
-
-```cmd
-ping DC01
-```
-
-also demonstrated that CLIENT01 could resolve the hostname `DC01` to the correct IP address.
-
-The expected server address was:
-
-```text
-10.0.2.10
-```
-
-Because name resolution succeeded, basic DNS functionality between CLIENT01 and DC01 was working.
-
-**DNS Result: PASS**
-
-## Troubleshooting Decision
-
-At this stage, the evidence showed:
-
-```text
-H: mapping exists
-        ↓
-H: is disconnected
-        ↓
-CLIENT01 can reach DC01
-        ↓
-DC01 hostname resolves correctly
-```
-
-This reduced the likelihood that the problem involved:
-
-```text
-Basic network connectivity
-DNS resolution
-Incorrect server IP address
-Missing H: drive configuration
-```
-
-The next step was to determine whether DC01 was actually publishing the HR network share.
-
-## Step 3 - Check Published SMB Shares
-
-The following command was selected:
-
-```cmd
-net view \\DC01
-```
-
-This command requested a list of the shared resources currently published by DC01.
-
-DC01 responded successfully.
-
-However, the expected share:
-
-```text
-HR
-```
-
-did not appear in the list.
-
-This was the critical troubleshooting clue.
-
-## Interpretation of net view
-
-The successful response from:
-
-```cmd
-net view \\DC01
-```
-
-showed that CLIENT01 could communicate with the Windows server and request its available shared resources.
-
-However:
-
-```text
-HR share → Missing
-```
-
-This indicated that the problem was likely located on DC01 at the SMB/share configuration layer.
-
-The troubleshooting evidence now showed:
-
-```text
-H: mapping exists
-        ↓
-H: disconnected
-        ↓
-DC01 reachable
-        ↓
-DNS working
-        ↓
-DC01 responds to net view
-        ↓
-HR share not published
-        ↓
-Investigate server-side SMB share
-```
-
-## Server-Side Investigation
-
-The investigation moved to DC01.
-
-The following management console was opened:
-
-```text
-Computer Management
-→ System Tools
-→ Shared Folders
-→ Shares
-```
-
-The list of currently published SMB shares was reviewed.
-
-The expected:
-
-```text
-HR
-```
-
-share was missing.
-
-This confirmed the client-side troubleshooting results.
+---
 
 ## Root Cause
 
-The root cause of the incident was:
+The investigation identified the actual problem:
 
-```text
-The HR folder still existed on DC01, but it was no longer published as an SMB network share.
+> The HR folder still existed and had the correct NTFS permissions, but it was no longer published as an SMB network share.
+
+This explained why:
+
+```cmd
+net view \\DC01
 ```
 
-The local folder:
-
-```text
-C:\Shares\HR
-```
-
-still existed.
-
-The NTFS permissions also remained configured.
-
-The failure occurred specifically at the SMB sharing layer.
-
-## Why NTFS Permissions Were Not Rebuilt
-
-Stopping or removing an SMB share does not automatically delete the underlying folder or its NTFS permissions.
-
-Because:
-
-```text
-C:\Shares\HR
-```
-
-still existed with the previously configured NTFS access-control entries, there was no reason to rebuild those permissions.
-
-The repair focused only on the component that had failed.
-
-## Resolution
-
-The HR share was restored on DC01 by navigating to:
-
-```text
-C:\Shares\HR
-→ Properties
-→ Sharing
-→ Advanced Sharing
-```
-
-The following option was enabled:
-
-```text
-Share this folder
-```
-
-The share name was configured as:
+did not display:
 
 ```text
 HR
 ```
 
-This restored the network path:
+NTFS permissions alone do not make a folder available across the network.
+
+The folder must also be shared through SMB.
+
+---
+
+## Corrective Action
+
+On DC01, the HR folder was opened at:
+
+```text
+C:\Shares\HR
+```
+
+The folder's properties were opened and the **Sharing** configuration was reviewed.
+
+Advanced Sharing was used to restore the network share.
+
+The folder was configured as:
+
+```text
+Share this folder: Enabled
+Share name: HR
+```
+
+The resulting UNC path was:
 
 ```text
 \\DC01\HR
 ```
 
+---
+
 ## Share Permissions
 
-The broad default:
+The SMB share permissions were configured for:
+
+```text
+ADRIANLAB\HR_Users
+```
+
+with the departmental permissions required for normal file access.
+
+Broad access such as:
 
 ```text
 Everyone
 ```
 
-permission was removed.
+was not used to provide departmental authorization.
 
-The following Active Directory security group was added:
+The HR security group was used instead so access remained based on the employee's role.
 
-```text
-ADRIANLAB\HR_Users
-```
+---
 
-The group received:
+## SMB and NTFS Permission Layers
 
-```text
-Change
-Read
-```
-
-Full Control was not granted.
-
-This restored the same least-privilege share configuration used before the incident.
-
-## Share Verification on DC01
-
-After Advanced Sharing was restored, the following location was checked again:
+Windows network file access depends on two separate permission layers:
 
 ```text
-Computer Management
-→ System Tools
-→ Shared Folders
-→ Shares
+User
+ |
+ v
+SMB Share Permissions
+ |
+ v
+NTFS Permissions
+ |
+ v
+HR Files
 ```
 
-The HR share now appeared in the list.
+For network access to succeed, the user must satisfy both layers.
 
-**Server-Side Share Result: PASS**
+In this incident:
 
-## Client-Side Verification
+```text
+NTFS permissions = Correct
+SMB share = Missing
+```
 
-The repair was not considered complete simply because the share appeared in Computer Management.
+Therefore, access failed even though the underlying NTFS permissions were valid.
 
-The original problem was reported from CLIENT01, so the solution needed to be verified from the user's workstation.
+---
 
-Sarah remained the test user.
+## Server-Side Verification
 
-## Direct UNC Path Test
+After restoring Advanced Sharing, the available shares were checked again from CLIENT01:
 
-The first client-side verification used the direct UNC path:
+```cmd
+net view \\DC01
+```
+
+The HR share now appeared in the results.
+
+**SMB Share Verification: ✅ PASS**
+
+This confirmed that DC01 was once again advertising the HR resource over the network.
+
+---
+
+## Direct UNC Path Verification
+
+Before relying on the mapped H: drive, the underlying share was tested directly:
 
 ```text
 \\DC01\HR
 ```
 
-The HR shared folder opened successfully.
+The HR folder opened successfully.
 
-**UNC Access Result: PASS**
+Testing the UNC path separately helped verify that SMB access worked independently of Group Policy drive mapping.
 
-This confirmed that CLIENT01 could once again access the SMB resource directly.
+**Direct Share Access: ✅ PASS**
+
+---
 
 ## Mapped Drive Verification
 
-File Explorer was opened to:
+The Group Policy configuration for the HR drive mapping remained in place.
 
-```text
-This PC
-```
-
-The HR H: drive was checked.
-
-The drive reconnected to:
-
-```text
-\\DC01\HR
-```
-
-If Group Policy needed to be refreshed, the following command was available:
+Group Policy could be refreshed using:
 
 ```cmd
 gpupdate /force
 ```
 
-The final mapped-drive state was:
+The current network connections were then reviewed using:
 
-```text
-HR (H:) → Connected
+```cmd
+net use
 ```
 
-**Mapped Drive Result: PASS**
+The expected mapping was:
+
+```text
+H:    \\DC01\HR
+```
+
+File Explorer displayed:
+
+```text
+HR (H:)
+```
+
+**Mapped Drive Result: ✅ PASS**
+
+---
 
 ## File Access Verification
 
-The final test involved accessing an actual HR file.
+The restored H: drive was opened from CLIENT01.
 
-Sarah successfully opened:
+The departmental test file was available:
 
 ```text
 HR-Test.txt
 ```
 
-This confirmed that the user could access the contents of the departmental share after the SMB service was restored.
+The successful file access confirmed that:
 
-**File Access Result: PASS**
+- The SMB share was active
+- The user was authorized
+- NTFS permissions were functioning
+- The mapped drive pointed to the correct resource
 
-## Complete Troubleshooting Sequence
+**File Access Result: ✅ PASS**
 
-The incident was diagnosed using the following sequence:
+---
 
-```text
-User reports disconnected HR drive
-        ↓
-net use
-        ↓
-H: exists but is disconnected
-        ↓
-ping DC01
-        ↓
-DC01 reachable and DNS resolves
-        ↓
-net view \\DC01
-        ↓
-Server responds but HR share is missing
-        ↓
-Check Computer Management on DC01
-        ↓
-HR missing from Shared Folders → Shares
-        ↓
-Restore Advanced Sharing
-        ↓
-Reapply HR_Users share permissions
-        ↓
-Test \\DC01\HR from CLIENT01
-        ↓
-Verify H: reconnects
-        ↓
-Open HR-Test.txt
-        ↓
-Ticket resolved
-```
+## Verification Summary
 
-## Layered Troubleshooting Model
+| Test | Expected Result | Actual Result |
+|------|-----------------|---------------|
+| HR folder exists on DC01 | Folder present | ✅ Pass |
+| HR_Users membership | Present | ✅ Pass |
+| NTFS permissions | Correct | ✅ Pass |
+| Initial `net view \\DC01` | HR missing | ✅ Confirmed |
+| Advanced Sharing | Restored | ✅ Pass |
+| Final `net view \\DC01` | HR appears | ✅ Pass |
+| Direct `\\DC01\HR` access | Share opens | ✅ Pass |
+| HR H: drive | Available | ✅ Pass |
+| HR-Test.txt | Accessible | ✅ Pass |
 
-This ticket demonstrated how a network-resource problem can be investigated layer by layer.
+---
 
-### Layer 1 - Drive Mapping
+## Why Group Policy Was Not the Root Cause
 
-Command:
+The missing H: drive could initially appear to be a Group Policy problem.
 
-```cmd
-net use
-```
-
-Question answered:
-
-```text
-Does Windows still have the H: network-drive mapping?
-```
-
-Result:
-
-```text
-Yes, but it is disconnected.
-```
-
-### Layer 2 - Network Connectivity
-
-Command:
-
-```cmd
-ping DC01
-```
-
-Question answered:
-
-```text
-Can CLIENT01 communicate with the server?
-```
-
-Result:
-
-```text
-Yes.
-```
-
-### Layer 3 - DNS Resolution
-
-The same ping test showed:
-
-```text
-DC01 → 10.0.2.10
-```
-
-Question answered:
-
-```text
-Can CLIENT01 resolve the DC01 hostname?
-```
-
-Result:
-
-```text
-Yes.
-```
-
-### Layer 4 - SMB Share Availability
-
-Command:
-
-```cmd
-net view \\DC01
-```
-
-Question answered:
-
-```text
-Is DC01 currently publishing the HR share?
-```
-
-Result:
-
-```text
-No.
-```
-
-This isolated the failure to the server-side SMB share configuration.
-
-## Root Cause Analysis
-
-The troubleshooting process ruled out several possible causes before making changes.
-
-The following were working:
-
-```text
-Sarah's workstation
-Basic network connectivity
-DNS resolution
-DC01 availability
-The existing H: drive mapping
-The underlying HR folder
-Existing NTFS permissions
-```
-
-The failing component was:
-
-```text
-HR SMB share publication
-```
-
-This allowed the repair to focus specifically on Advanced Sharing.
-
-## Why the GPO Was Not Recreated
-
-The `net use` result showed:
+However, the GPO was configured to map:
 
 ```text
 H: → \\DC01\HR
 ```
 
-even though the status was disconnected.
+If the target UNC path itself does not exist as an active SMB share, Group Policy cannot provide a functioning network drive.
 
-This meant Windows already knew about the drive mapping.
-
-Recreating the Group Policy Object would not have corrected the missing SMB share.
-
-The GPO was therefore left unchanged.
-
-## Why Network Settings Were Not Changed
-
-The successful:
-
-```cmd
-ping DC01
-```
-
-test demonstrated that CLIENT01 could communicate with DC01.
-
-The hostname also resolved correctly to:
+The problem was therefore below the Group Policy layer:
 
 ```text
-10.0.2.10
+Group Policy
+     |
+     v
+H: → \\DC01\HR
+          X
+     SMB share missing
 ```
 
-Therefore, changing CLIENT01's IP address, DNS settings, or virtual network configuration would have been unnecessary.
+Restoring the underlying SMB share allowed the existing drive-mapping configuration to function again.
 
-## Why Permissions Were Not Changed First
+---
 
-An access-denied problem and a missing-share problem are different.
-
-If the HR share had appeared in:
-
-```cmd
-net view \\DC01
-```
-
-but Sarah received an access-denied message, the investigation would have shifted toward:
-
-```text
-Security-group membership
-Share permissions
-NTFS permissions
-```
-
-Instead, the HR share did not appear at all.
-
-That evidence pointed toward the SMB share configuration before file permissions.
-
-## Commands Used
-
-The primary troubleshooting commands used during this incident were:
+## Troubleshooting Commands Used
 
 ```cmd
 net use
-ping DC01
 net view \\DC01
-```
-
-Group Policy could also be refreshed when necessary using:
-
-```cmd
+whoami /groups
 gpupdate /force
 ```
 
-## Command Purpose Summary
+### `net use`
+
+Displays current mapped drives and network connections.
+
+### `net view \\DC01`
+
+Displays SMB shares currently advertised by DC01.
+
+### `whoami /groups`
+
+Confirms the security groups contained in the current user's Windows security token.
+
+### `gpupdate /force`
+
+Forces the client to process the latest Group Policy settings.
+
+---
+
+## Technologies Used
+
+- Windows Server
+- Active Directory Domain Services
+- Active Directory Security Groups
+- SMB File Sharing
+- NTFS Permissions
+- Group Policy Preferences
+- Windows 11
+- Windows Command Line
+- Oracle VirtualBox
+
+---
+
+## Skills Demonstrated
+
+- SMB Share Administration
+- Windows File Server Troubleshooting
+- NTFS Permission Verification
+- Active Directory Security Groups
+- Group Policy Troubleshooting
+- UNC Path Testing
+- Command-Line Diagnostics
+- Layered Troubleshooting
+- Root-Cause Analysis
+- Access Verification
+
+---
+
+## Screenshots
+
+### HR Mapped Drive
+
+The following screenshot shows the restored HR H: drive on CLIENT01.
+
+![HR Mapped Drive](../screenshots/group-policy/hr-mapped-drive.png)
+
+*Figure 1. HR H: drive available after the SMB share was restored.*
+
+### HR Share Files
+
+The following screenshot verifies that the restored HR network resource can be opened and its departmental files accessed.
+
+![HR Shared Folder](../screenshots/file-sharing/hr-share-files.png)
+
+*Figure 2. HR departmental files accessible through the restored network share.*
+
+---
+
+## Lessons Learned
+
+This exercise demonstrated that NTFS permissions and SMB sharing perform different functions in Windows file services.
+
+A folder can exist on the server and have perfectly valid NTFS permissions while still being completely unavailable to network users if it is not published as an SMB share.
+
+The `net view \\DC01` command was particularly useful because it helped determine whether the expected resource was actually being advertised by the server. Once the HR share was missing from that list, troubleshooting could focus on server-side sharing instead of unnecessarily changing Active Directory membership or Group Policy.
+
+The exercise also reinforced the value of testing the underlying resource before troubleshooting higher-level automation. Verifying `\\DC01\HR` directly helped separate SMB access from the H: drive mapping.
+
+The troubleshooting process followed a repeatable methodology:
 
 ```text
-net use
-→ Check network-drive mapping and connection status
-
-ping DC01
-→ Check server connectivity and basic DNS resolution
-
-net view \\DC01
-→ Check SMB resources currently published by DC01
-
-gpupdate /force
-→ Refresh Group Policy when necessary
+Observe → Test → Isolate → Correct → Verify
 ```
 
-## Verification Summary
-
-The completed repair was verified as follows:
-
-```text
-H: mapping exists: PASS
-DC01 reachable: PASS
-DC01 resolves to 10.0.2.10: PASS
-HR SMB share restored: PASS
-\\DC01\HR accessible: PASS
-H: reconnected: PASS
-HR-Test.txt accessible: PASS
-```
-
-## Root Cause Summary
-
-```text
-Problem:
-HR mapped drive disconnected
-
-Initial Observation:
-H: still mapped to \\DC01\HR but disconnected
-
-Network Test:
-DC01 reachable
-
-DNS Test:
-DC01 resolved to 10.0.2.10
-
-SMB Test:
-HR missing from net view \\DC01
-
-Root Cause:
-HR folder was no longer published as an SMB share
-
-Resolution:
-Restored Advanced Sharing and HR_Users share permissions
-
-Verification:
-UNC path opened, H: reconnected, and HR-Test.txt was accessible
-```
-
-## Troubleshooting Methodology
-
-This incident followed the troubleshooting process:
-
-```text
-Identify
-    ↓
-Test
-    ↓
-Interpret
-    ↓
-Isolate
-    ↓
-Correct
-    ↓
-Verify
-```
-
-The key principle was to use the result of each test to determine the next action rather than making several unrelated changes simultaneously.
-
-## Help Desk Skills Demonstrated
-
-This incident required:
-
-- Investigating a disconnected mapped drive
-- Reading and interpreting `net use` output
-- Testing server connectivity
-- Verifying DNS name resolution
-- Querying available SMB shares
-- Using Computer Management
-- Managing Windows shared folders
-- Configuring Advanced Sharing
-- Applying security-group-based share permissions
-- Distinguishing SMB failures from NTFS permission failures
-- Performing root-cause analysis
-- Verifying the repair from the end user's workstation
-
-## Security Concepts
-
-This task reinforced:
-
-- Least privilege
-- Role-based access control
-- Security-group-based share permissions
-- Separation of SMB and NTFS permissions
-- Layered access control
-- Positive access verification
-
-## Ticket Resolution
-
-Sarah Johnson's disconnected HR network drive was diagnosed using a layered troubleshooting process.
-
-`net use` confirmed that H: was still mapped but disconnected.
-
-`ping DC01` confirmed network connectivity and successful DNS resolution to `10.0.2.10`.
-
-`net view \\DC01` showed that the HR share was not being published by DC01.
-
-Computer Management confirmed that HR was missing from the server's active shares.
-
-The HR SMB share was restored using Advanced Sharing, and `HR_Users` received Change and Read share permissions.
-
-Final testing from CLIENT01 confirmed that `\\DC01\HR` opened successfully, the H: drive reconnected, and Sarah could access `HR-Test.txt`.
-
-## Concepts Practiced
-
-- SMB file sharing
-- Windows network shares
-- Mapped network drives
-- `net use`
-- `ping`
-- `net view`
-- DNS troubleshooting
-- Network connectivity troubleshooting
-- Computer Management
-- Shared Folders
-- Advanced Sharing
-- Active Directory security groups
-- Share permissions
-- NTFS permissions
-- Least privilege
-- Root-cause analysis
-- Layered troubleshooting
-- Help Desk troubleshooting
-- Verification after remediation
+Working through the environment layer by layer made it possible to identify the actual root cause while preserving configurations that were already functioning correctly.
