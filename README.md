@@ -1,263 +1,435 @@
-# 🖥️ Windows Active Directory Help Desk Lab Portfolio
+# 🖥️ Windows Active Directory Help Desk Lab
 
-![Windows Server](https://img.shields.io/badge/Windows_Server-2025-0078D6?logo=windows&logoColor=white)
-![Active Directory](https://img.shields.io/badge/Active_Directory-Lab-2E8B57)
-![Oracle VirtualBox](https://img.shields.io/badge/Oracle_VirtualBox-7.x-183A61?logo=virtualbox&logoColor=white)
-![GitHub](https://img.shields.io/badge/GitHub-Portfolio-181717?logo=github&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen)
+Hands-on Windows Active Directory home lab simulating common **Help Desk and junior Windows system administration tasks**, including user administration, Group Policy, network file sharing, access control, employee lifecycle management, and troubleshooting.
 
-> A hands-on Windows Server Active Directory home lab demonstrating real-world Help Desk and Junior Systems Administrator tasks including Active Directory administration, Group Policy, SMB file sharing, NTFS permissions, user provisioning, troubleshooting, and security best practices.
+The environment was built using **Windows Server, Windows 11 Enterprise, and Oracle VirtualBox** and documented using **Git, GitHub, and Markdown**.
 
 ---
 
-## 📑 Table of Contents
+## 🎯 Project Overview
 
-- 📖 Project Overview
-- 🛠️ Skills Demonstrated
-- 🏗️ Lab Environment
-- 💻 Technologies Used
-- 🌐 Lab Architecture
-- 📋 Help Desk Scenarios
-- 📸 Screenshots
-- 🔒 Security Concepts
-- 🎓 Lessons Learned
-- 🚀 Future Improvements
-- 👨‍💻 About the Author
+This project was designed to provide practical experience administering and troubleshooting a Windows domain environment.
 
----
+Rather than stopping after the initial Active Directory configuration, the lab includes realistic support scenarios involving:
 
-## 📖 Project Overview
-
-This project documents the design, implementation, and troubleshooting of a Windows Active Directory home lab built using **Oracle VirtualBox**, **Windows Server 2025**, **Windows 11 Enterprise**, and **Ubuntu Linux**.
-
-The lab simulates common Help Desk and Junior Systems Administrator responsibilities, including:
-
-- Active Directory administration
-- User provisioning and deprovisioning
-- Organizational Unit (OU) management
-- Security group administration
-- SMB file sharing
+- Active Directory user administration
+- Account lockouts
+- Security groups
+- SMB file shares
 - NTFS permissions
-- Share permissions
-- Group Policy configuration
-- Drive mapping
-- Help Desk troubleshooting
-- Root cause analysis
+- Group Policy Preferences
+- Mapped network drives
+- New employee onboarding
+- Department transfers
+- Access provisioning and revocation
+- Missing drive troubleshooting
+- SMB share troubleshooting
 
-Each scenario includes the original objective, implementation steps, troubleshooting process, verification, and screenshots.
-
----
-
-## ⭐ Project Highlights
-
-- 🏢 Built a Windows Active Directory domain from scratch.
-- 👥 Created and managed Organizational Units (OUs) and security groups.
-- 🔐 Implemented Role-Based Access Control (RBAC).
-- 💽 Configured SMB file shares with NTFS permissions.
-- ⚙️ Automated drive mappings using Group Policy Preferences.
-- 👤 Provisioned and deprovisioned user accounts.
-- 🔍 Troubleshot authentication, permissions, and network-drive issues.
-- 📸 Documented each lab with screenshots and verification steps.
-- 📚 Published the project using Git and GitHub.
+Problems were intentionally introduced into the environment and diagnosed using Windows administrative tools and command-line utilities.
 
 ---
 
-## 🛠️ Skills Demonstrated
+## 🏗️ Lab Architecture
 
-| Windows Administration | Networking | Security | Professional Skills |
-|------------------------|------------|----------|---------------------|
-| Active Directory Users and Computers | SMB File Sharing | NTFS Permissions | Technical Documentation |
-| Organizational Units | UNC Paths | Share Permissions | Root Cause Analysis |
-| User & Group Management | Drive Mapping | Least Privilege | Troubleshooting |
-| Group Policy Management | Network Shares | Role-Based Access Control | Verification Testing |
-| Group Policy Preferences | DNS Verification | Authentication | Git & GitHub |
+| Component | Configuration |
+|-----------|---------------|
+| Domain | `adrianlab.local` |
+| Domain Controller | `DC01` |
+| Client Workstation | `CLIENT01` |
+| Server Platform | Windows Server |
+| Client Platform | Windows 11 Enterprise |
+| Virtualization | Oracle VirtualBox |
+| Finance Share | `\\DC01\Finance` |
+| HR Share | `\\DC01\HR` |
+| Finance Drive | `F:` |
+| HR Drive | `H:` |
 
----
-
-## 🏗️ Lab Environment
-
-| Component | Technology |
-|-----------|------------|
-| Hypervisor | Oracle VirtualBox |
-| Domain Controller | Windows Server 2025 |
-| Client Workstation | Windows 11 Enterprise |
-| Documentation Workstation | Ubuntu Linux |
-| Version Control | Git |
-| Repository Hosting | GitHub |
-
----
-
-## 💻 Technologies Used
-
-- Windows Server 2025
-- Windows 11 Enterprise
-- Ubuntu Desktop
-- Oracle VirtualBox
-- Active Directory Domain Services (AD DS)
-- Group Policy Management
-- SMB File Sharing
-- NTFS Permissions
-- Git
-- GitHub
-
----
-
-## 🌐 Lab Architecture
+### Environment Flow
 
 ```text
-                          Home Lab
-
-                    Oracle VirtualBox
-                          |
-        +-----------------+-----------------+
-        |                 |                 |
-        v                 v                 v
-+----------------+ +----------------+ +----------------+
-|      DC01      | |    CLIENT01    | |     Ubuntu     |
-| Windows Server | | Windows 11     | | Ubuntu Desktop |
-|      2025      | | Enterprise     | | Git / GitHub   |
-| AD DS and DNS  | | Domain Joined  | | Documentation  |
-+--------+-------+ +----------------+ +----------------+
-         |
-         v
-   adrianlab.local
-         |
-   +-----+------+
-   |            |
-Finance OU     HR OU
-   |            |
-Finance_Users  HR_Users
-   |            |
-Finance Share  HR Share
+                 adrianlab.local
+                        |
+                 +------+------+
+                 |             |
+                DC01        CLIENT01
+                 |
+        +--------+---------+
+        |                  |
+ Active Directory      File Services
+        |                  |
+   +----+----+        +----+----+
+   |         |        |         |
+Finance     HR      Finance     HR
+Users      Users     Share     Share
+   |         |        |         |
+   +----+----+        +----+----+
+        |                  |
+        +--------+---------+
+                 |
+           Group Policy
+                 |
+          +------+------+
+          |             |
+       Finance F:      HR H:
 ```
 
 ---
 
-## 📋 Help Desk Scenarios
+## 🧰 Technologies Used
+
+![Windows Server](https://img.shields.io/badge/Windows%20Server-Active%20Directory-0078D4?style=flat-square)
+![Windows 11](https://img.shields.io/badge/Windows%2011-Client-0078D4?style=flat-square)
+![Active Directory](https://img.shields.io/badge/Active%20Directory-AD%20DS-0078D4?style=flat-square)
+![Group Policy](https://img.shields.io/badge/Group%20Policy-GPO-0078D4?style=flat-square)
+![VirtualBox](https://img.shields.io/badge/VirtualBox-Lab-183A61?style=flat-square)
+![Git](https://img.shields.io/badge/Git-Version%20Control-F05032?style=flat-square)
+![GitHub](https://img.shields.io/badge/GitHub-Documentation-181717?style=flat-square)
+
+- Windows Server
+- Windows 11 Enterprise
+- Active Directory Domain Services
+- Active Directory Users and Computers
+- DNS
+- Group Policy Management
+- Group Policy Preferences
+- SMB File Sharing
+- NTFS Permissions
+- Windows Command Line
+- Oracle VirtualBox
+- Git / GitHub
+- Markdown
+
+---
+
+## 🔐 Access Control Design
+
+Departmental access is based on **Active Directory security-group membership** rather than permissions assigned directly to individual employees.
+
+```text
+Employee
+   |
+   v
+Department Security Group
+   |
+   +----------+----------+
+   |                     |
+   v                     v
+SMB + NTFS          Group Policy
+Permissions           Targeting
+   |                     |
+   v                     v
+Department Share     Mapped Drive
+```
+
+Examples:
+
+```text
+Finance_Users → Finance Share → F:
+HR_Users      → HR Share      → H:
+```
+
+This model supports **Role-Based Access Control (RBAC)** and the **principle of least privilege**.
+
+---
+
+## 📚 Lab Documentation
 
 | # | Scenario | Documentation |
 |---|----------|---------------|
-| 🏗️ | Active Directory Setup | [01 - Active Directory Setup](docs/01-active-directory-setup.md) |
-| 🔐 | Account Lockout Troubleshooting | [02 - Account Lockout Troubleshooting](docs/02-account-lockout.md) |
-| 📁 | Secure Department File Share | [03 - File Share Permissions](docs/03-file-share-permissions.md) |
-| 💽 | Group Policy Drive Mapping | [04 - Group Policy Drive Mapping](docs/04-group-policy-drive-mapping.md) |
-| 👤 | User Onboarding | [05 - User Onboarding](docs/05-user-onboarding.md) |
-| 🔄 | Department Transfer | [06 - Department Transfer](docs/06-department-transfer.md) |
-| 🔍 | Missing Department Drive Troubleshooting | [07 - Missing Department Drive Troubleshooting](docs/07-missing-drive-troubleshooting.md) |
-| 🌐 | SMB Share Troubleshooting | [08 - SMB Share Troubleshooting](docs/08-smb-share-troubleshooting.md) |
+| 01 | Active Directory Environment Setup | [View Lab](docs/01-active-directory-setup.md) |
+| 02 | Account Lockout Troubleshooting | [View Lab](docs/02-account-lockout.md) |
+| 03 | Secure Finance File Share | [View Lab](docs/03-file-share-permissions.md) |
+| 04 | Group Policy Drive Mapping | [View Lab](docs/04-group-policy-drive-mapping.md) |
+| 05 | New Employee Onboarding | [View Lab](docs/05-user-onboarding.md) |
+| 06 | Employee Department Transfer | [View Lab](docs/06-department-transfer.md) |
+| 07 | Missing Mapped Drive Troubleshooting | [View Lab](docs/07-missing-drive-troubleshooting.md) |
+| 08 | SMB Share Troubleshooting | [View Lab](docs/08-smb-share-troubleshooting.md) |
+| 09 | Complete Project Summary | [View Summary](docs/09-project-summary.md) |
+
+> **Start here:** [Read the complete project summary](docs/09-project-summary.md) for an overview of the architecture, access-control model, troubleshooting scenarios, and lessons learned.
 
 ---
 
-## 📸 Screenshot Gallery
+## 📸 Project Evidence
 
-| Active Directory | Group Policy |
-|------------------|--------------|
-| ![AD](screenshots/active-directory/aduc-domain-structure.png) | ![GPO](screenshots/group-policy/finance-drive-mapping-gpo.png) |
+### Active Directory Environment
 
-| HR Drive | HR Share |
-|----------|----------|
-| ![Drive](screenshots/group-policy/hr-mapped-drive.png) | ![Share](screenshots/file-sharing/hr-share-files.png) |
+The `adrianlab.local` Active Directory environment used throughout the lab.
 
----
+[![Active Directory Domain Structure](screenshots/active-directory/aduc-domain-structure.png)](screenshots/active-directory/aduc-domain-structure.png)
 
-## 🔒 Security Concepts
-
-Throughout this project, I implemented and verified several Windows security concepts including:
-
-- 🔐 Least Privilege
-- 👥 Role-Based Access Control (RBAC)
-- 🛡️ Security Group-Based Authorization
-- 📁 NTFS Permissions
-- 🌐 SMB Share Permissions
-- 💽 Group Policy Preferences
-- 👤 User Provisioning
-- 🔄 User Deprovisioning
-- ✅ Positive and Negative Access Testing
+*Active Directory Users and Computers showing the lab domain structure.*
 
 ---
 
-## 🎓 Lessons Learned
+### Finance Users and Security Group
 
-Building this lab strengthened my understanding of:
+Active Directory security groups were used to provide department-based resource access.
+
+[![Finance Users and Security Group](screenshots/active-directory/finance-users-group.png)](screenshots/active-directory/finance-users-group.png)
+
+*Finance users and departmental security-group configuration.*
+
+---
+
+### Finance Group Policy Drive Mapping
+
+Group Policy Preferences automatically deployed the Finance F: drive to authorized users.
+
+[![Finance Drive Mapping GPO](screenshots/group-policy/finance-drive-mapping-gpo.png)](screenshots/group-policy/finance-drive-mapping-gpo.png)
+
+*Finance drive mapping configured through Group Policy Preferences.*
+
+---
+
+### HR Drive Verification
+
+After the appropriate Active Directory and Group Policy configuration was applied, CLIENT01 received the HR H: drive.
+
+[![HR Mapped Drive](screenshots/group-policy/hr-mapped-drive.png)](screenshots/group-policy/hr-mapped-drive.png)
+
+*HR H: drive successfully mapped on CLIENT01.*
+
+---
+
+### HR File Share Verification
+
+The mapped H: drive successfully provided access to the HR departmental files.
+
+[![HR Shared Folder](screenshots/file-sharing/hr-share-files.png)](screenshots/file-sharing/hr-share-files.png)
+
+*HR departmental files accessible through the mapped network drive.*
+
+---
+
+### Account Lockout Troubleshooting
+
+Active Directory Users and Computers was used to identify and resolve an intentionally locked domain account.
+
+[![Account Lockout](screenshots/troubleshooting/account-lockout.png)](screenshots/troubleshooting/account-lockout.png)
+
+*Account lockout scenario used to practice domain-user troubleshooting.*
+
+---
+
+## 🔎 Troubleshooting Methodology
+
+A consistent troubleshooting process was used throughout the lab:
+
+```text
+Observe
+   |
+   v
+Verify
+   |
+   v
+Isolate
+   |
+   v
+Correct
+   |
+   v
+Retest
+```
+
+Examples included:
+
+- Identifying missing security-group membership
+- Troubleshooting missing mapped drives
+- Verifying Windows security tokens
+- Distinguishing Group Policy issues from permission issues
+- Identifying a missing SMB share
+- Verifying both authorized and unauthorized access
+
+---
+
+## ⌨️ Diagnostic Commands
+
+Common Windows commands used during troubleshooting:
+
+```cmd
+whoami
+whoami /groups
+net use
+net view \\DC01
+gpupdate /force
+```
+
+| Command | Purpose |
+|---------|---------|
+| `whoami` | Verify the currently authenticated user |
+| `whoami /groups` | Inspect security groups in the current Windows token |
+| `net use` | Review mapped drives and network connections |
+| `net view \\DC01` | Review SMB shares advertised by DC01 |
+| `gpupdate /force` | Force Group Policy processing |
+
+---
+
+## 💼 Skills Demonstrated
+
+### Active Directory & Identity
 
 - Active Directory administration
+- User account provisioning
 - Organizational Unit management
 - Security group administration
-- Group Policy deployment
-- SMB file sharing
-- NTFS permissions
-- User provisioning and deprovisioning
-- Windows authentication
-- Windows security tokens
-- Help Desk troubleshooting methodology
-- Root cause analysis
-- Technical documentation
-- Git and GitHub portfolio management
+- Account lockout resolution
+- Employee onboarding
+- Department transfers
+- Access provisioning and revocation
 
-This project also reinforced the importance of documenting not only successful configurations but also the troubleshooting process used to identify and resolve problems.
+### Windows Administration
+
+- Windows Server administration
+- Windows 11 domain clients
+- Domain authentication
+- Windows security tokens
+- DNS-based domain communication
+- Command-line diagnostics
+
+### Group Policy & File Services
+
+- Group Policy Management
+- Group Policy Preferences
+- Item-level targeting
+- Mapped network drives
+- SMB shares
+- NTFS permissions
+- Permission inheritance
+- UNC path testing
+
+### Troubleshooting
+
+- Root-cause analysis
+- Layered troubleshooting
+- Positive access testing
+- Negative access testing
+- Authentication troubleshooting
+- Permission troubleshooting
+- Mapped-drive troubleshooting
+- SMB troubleshooting
+
+### Documentation
+
+- Technical documentation
+- Markdown
+- Git
+- GitHub
+- Version control
+- Screenshot-based verification
+
+---
+
+## 🧪 Example Help Desk Scenario
+
+**Issue:** An HR employee reports that the H: drive is missing.
+
+**Investigation:**
+
+```cmd
+net use
+whoami /groups
+```
+
+`net use` confirmed that H: was not mapped.
+
+`whoami /groups` showed that the user's current Windows security token did not contain `HR_Users`.
+
+**Root Cause:** The employee was missing the required Active Directory security-group membership.
+
+**Resolution:**
+
+1. Restored `HR_Users` membership in Active Directory.
+2. Signed the user completely out of CLIENT01.
+3. Signed the user back in to generate a new security token.
+4. Refreshed Group Policy.
+5. Verified H: returned.
+6. Opened the HR share and verified file access.
+
+**Result:** ✅ Resolved
+
+This troubleshooting process is documented in detail in [Lab 07](docs/07-missing-drive-troubleshooting.md).
+
+---
+
+## 🧠 Key Takeaways
+
+This project demonstrated that a simple user-facing issue such as a missing network drive can involve several interconnected technologies:
+
+```text
+Active Directory Account
+          |
+          v
+    Security Group
+          |
+          v
+ Windows Security Token
+          |
+          v
+ Group Policy Preference
+          |
+          v
+   SMB Share Permission
+          |
+          v
+    NTFS Permission
+          |
+          v
+   Departmental Files
+```
+
+Troubleshooting these issues effectively requires identifying **which layer is failing** rather than immediately changing multiple configurations.
+
+The lab also demonstrated why security-group-based access is more scalable than assigning permissions directly to individual employees.
 
 ---
 
 ## 🚀 Future Improvements
 
-Planned additions include:
+Planned extensions to this lab include:
 
-- 🔐 Password Policies
-- 🛡️ Fine-Grained Password Policies
-- 📂 Folder Redirection
-- 🖨️ Print Server
-- 🌐 DHCP
-- 🌍 DNS Administration
-- ⚡ PowerShell Automation
-- 👤 Bulk User Provisioning
-- 🔍 Event Viewer Investigations
-- 📜 PowerShell Login Scripts
-- 🔑 LAPS (Local Administrator Password Solution)
-- 🖥️ WSUS (Windows Server Update Services)
-- 📊 Group Policy Security Hardening
-- ☁️ Hybrid Microsoft Entra ID Integration
+- PowerShell Active Directory automation
+- CSV-based bulk user provisioning
+- Automated group assignments
+- Password reset and account-unlock scripts
+- Additional Group Policy security configurations
+- Windows Server DHCP
+- Expanded DNS administration
+- Windows Event Viewer troubleshooting
+- Centralized logging and monitoring
+- Additional Help Desk ticket simulations
 
 ---
 
-## 📊 Repository Statistics
+## 📁 Repository Structure
 
-| Category | Count |
-|----------|------:|
-| Help Desk Scenarios | 8 |
-| Documentation Files | 8 |
-| Screenshots | Growing |
-| Windows Servers | 1 |
-| Windows Clients | 1 |
-| Linux Systems | 1 |
-| Technologies Used | 10+ |
+```text
+windows-active-directory-helpdesk-lab/
+│
+├── README.md
+│
+├── docs/
+│   ├── 01-active-directory-setup.md
+│   ├── 02-account-lockout.md
+│   ├── 03-file-share-permissions.md
+│   ├── 04-group-policy-drive-mapping.md
+│   ├── 05-user-onboarding.md
+│   ├── 06-department-transfer.md
+│   ├── 07-missing-drive-troubleshooting.md
+│   ├── 08-smb-share-troubleshooting.md
+│   └── 09-project-summary.md
+│
+└── screenshots/
+    ├── active-directory/
+    ├── file-sharing/
+    ├── group-policy/
+    └── troubleshooting/
+```
 
 ---
 
-## 👨‍💻 About the Author
+## 📌 Project Status
 
-I created this project to strengthen my Windows Server, Active Directory, Group Policy, and Help Desk troubleshooting skills while building a professional portfolio that demonstrates practical systems administration experience.
+**Status:** Complete — core Active Directory Help Desk lab
 
-Every lab in this repository was completed in a virtualized environment using Oracle VirtualBox and documented with configuration details, troubleshooting procedures, verification steps, and supporting screenshots.
-
-My goal is to continue expanding this repository as I develop additional Windows Server, networking, scripting, and cybersecurity skills.
-
----
-
-## ⭐ Repository Status
-
-**Current Status:** ✅ Active Development
-
-Completed scenarios:
-
-- ✅ Active Directory Setup
-- ✅ Account Lockout Troubleshooting
-- ✅ Secure Department File Sharing
-- ✅ Group Policy Drive Mapping
-- ✅ User Onboarding
-- ✅ Department Transfer
-- ✅ Missing Department Drive Troubleshooting
-- ✅ SMB Share Troubleshooting
-
-Additional enterprise Windows administration projects will be added over time.
-
-
+The environment remains available for additional Windows administration, PowerShell automation, networking, and security exercises.
