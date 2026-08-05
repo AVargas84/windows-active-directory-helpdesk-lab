@@ -1,640 +1,411 @@
-# Employee Department Transfer and Access Deprovisioning
+# Employee Department Transfer
 
-## Scenario
+## Overview
 
-Emily Rodriguez transferred from the Finance department to the HR department.
+This exercise demonstrates how to update an employee's Active Directory access when the employee transfers from one department to another.
 
-Because her job responsibilities changed, IT needed to remove her previous Finance access and provide the appropriate HR resources.
+Emily Rodriguez was originally provisioned as a Finance employee. After transferring to HR, her Finance access needed to be removed and HR access granted without creating a new user account.
 
-The goal was to demonstrate both resource provisioning and deprovisioning using Active Directory security groups, Organizational Units, SMB and NTFS permissions, and Group Policy Preferences.
+The exercise demonstrates how Active Directory security-group membership can be used to manage access throughout the employee lifecycle.
+
+---
 
 ## Objective
 
-Complete an employee department transfer by:
+Transfer Emily Rodriguez from Finance to HR by updating her Active Directory placement and security-group memberships, then verify that her mapped drives and file-share permissions reflect her new role.
 
-- Removing obsolete Finance security-group membership
-- Adding the employee to the HR security group
-- Moving the employee account to the appropriate Organizational Unit
-- Creating and securing an HR departmental share
-- Automatically mapping the HR network drive
-- Removing the obsolete Finance drive
-- Verifying that Finance access was completely revoked
-- Confirming that HR access was successfully granted
+---
 
-## Employee Information
+## Lab Environment
 
-The employee being transferred was:
+| Component | Configuration |
+|-----------|---------------|
+| Domain Controller | DC01 |
+| Client Workstation | CLIENT01 |
+| Domain | adrianlab.local |
+| Employee | Emily Rodriguez |
+| Username | erodriguez |
+| Previous Department | Finance |
+| New Department | HR |
+| Previous Security Group | ADRIANLAB\Finance_Users |
+| New Security Group | ADRIANLAB\HR_Users |
+| Finance Share | \\DC01\Finance |
+| HR Share | \\DC01\HR |
+| Finance Drive | F: |
+| HR Drive | H: |
+
+---
+
+## Transfer Requirements
+
+Emily's department transfer required several access changes.
+
+The intended result was:
+
+| Resource | Before Transfer | After Transfer |
+|----------|-----------------|----------------|
+| Finance_Users | Member | Removed |
+| HR_Users | Not a member | Added |
+| Finance F: drive | Available | Removed |
+| HR H: drive | Unavailable | Available |
+| Finance share | Access granted | Access denied |
+| HR share | Access denied | Access granted |
+
+The goal was not simply to grant HR access. Finance access also needed to be removed to maintain least privilege.
+
+---
+
+## Active Directory Organizational Unit Change
+
+Emily's user account was moved from the Finance Organizational Unit to the HR Organizational Unit.
+
+The move reflected her new departmental placement within Active Directory.
+
+Her existing domain account remained:
 
 ```text
-Name: Emily Rodriguez
-Username: erodriguez
-Previous Department: Finance
-New Department: HR
-Domain: ADRIANLAB
+ADRIANLAB\erodriguez
 ```
 
-Before the transfer, Emily was a member of:
+A new account was not required.
+
+This preserved the employee's identity while allowing administrative organization and access assignments to be updated.
+
+---
+
+## Security Group Changes
+
+Emily's departmental security-group memberships were changed from:
 
 ```text
 ADRIANLAB\Finance_Users
 ```
 
-and received the Finance mapped drive:
-
-```text
-F: → \\DC01\Finance
-```
-
-## HR Security Group
-
-The following Active Directory security group already existed:
+to:
 
 ```text
 ADRIANLAB\HR_Users
 ```
 
-This group was used to control access to HR resources.
-
-## HR Shared Folder Creation
-
-A new departmental folder was created on DC01:
-
-```text
-C:\Shares\HR
-```
-
-A test file was created inside the folder:
-
-```text
-HR-Test.txt
-```
-
-The folder was then published as an SMB network share:
-
-```text
-\\DC01\HR
-```
-
-## HR Share Permissions
-
-The default broad `Everyone` permission was removed from the HR share.
-
-The following Active Directory security group was added:
-
-```text
-ADRIANLAB\HR_Users
-```
-
-The group received:
-
-```text
-Change
-Read
-```
-
-Full Control was not granted.
-
-This allowed HR employees to work with departmental files without giving them unnecessary administrative control over the share.
-
-## HR NTFS Permissions
-
-The HR folder was configured with NTFS permissions for:
-
-```text
-ADRIANLAB\HR_Users
-```
-
-The group received:
-
-```text
-Modify
-Read & execute
-List folder contents
-Read
-Write
-```
-
-Inheritance was disabled and inherited permissions were converted into explicit permissions.
-
-The broad:
-
-```text
-Users (ADRIANLAB\Users)
-```
-
-entries were removed.
-
-Administrative and system entries were retained, including:
-
-```text
-Administrators
-SYSTEM
-CREATOR OWNER
-HR_Users
-```
-
-## HR Permission Model
-
-The final HR permission structure was:
-
-```text
-Share permissions:
-HR_Users → Change + Read
-
-NTFS permissions:
-HR_Users → Modify
-```
-
-This followed the same least-privilege model previously implemented for the Finance department.
-
-## Active Directory Department Transfer
-
-Emily's Active Directory account was updated to reflect her new job assignment.
-
-The following changes were made:
-
-```text
-Removed from: Finance_Users
-Added to: HR_Users
-```
-
-Her account was also moved from the Finance Organizational Unit to the HR Organizational Unit.
-
-The final Active Directory configuration was:
+The completed access change followed this model:
 
 ```text
 Emily Rodriguez
-        ↓
-HR OU
-        ↓
-Member of HR_Users
-        ↓
-Not a member of Finance_Users
+        |
+        +---- Remove Finance_Users
+        |
+        +---- Add HR_Users
 ```
 
-## Organizational Units vs. Security Groups
+Removing the previous departmental group was just as important as adding the new group.
 
-The department transfer demonstrated an important difference between Organizational Units and security groups.
+If Emily remained a member of `Finance_Users`, she could retain access to Finance resources even though those resources were no longer required for her job.
 
-The HR Organizational Unit was used to organize Emily's Active Directory account and could be used to determine which OU-linked policies apply.
+---
 
-The `HR_Users` security group was used to grant access to departmental resources.
+## HR Resource Access
 
-Moving Emily into the HR OU by itself did not provide access to the HR share.
-
-Her membership in:
+The HR environment was configured to use:
 
 ```text
 ADRIANLAB\HR_Users
 ```
 
-provided the authorization required for the HR resources.
+for departmental resource access.
 
-## HR Drive Mapping Group Policy
+Emily's new membership provided the authorization required for HR resources.
 
-A new Group Policy Object was created:
-
-```text
-HR Drive Mapping
-```
-
-The drive mapping was configured under:
+The access model was:
 
 ```text
-User Configuration
-→ Preferences
-→ Windows Settings
-→ Drive Maps
+Emily Rodriguez
+        |
+        v
+     HR_Users
+        |
+   +----+------------------+
+   |                       |
+   v                       v
+SMB + NTFS             GPO Item-Level
+Permissions              Targeting
+   |                       |
+   v                       v
+HR Share Access          HR H: Drive
 ```
 
-The mapped drive was configured as:
+This allowed the existing HR configuration to be reused without assigning permissions directly to Emily's account.
 
-```text
-Action: Update
-Location: \\DC01\HR
-Label: HR
-Drive Letter: H:
-```
+---
 
-## HR Item-Level Targeting
+## Windows Security Token
 
-The HR drive needed to apply only to authorized HR employees.
+After the Active Directory group changes were made, Emily's existing CLIENT01 login session could still contain her previous group memberships.
 
-Item-level targeting was enabled under the Common tab.
+Windows generates a security token when a user authenticates. That token contains information such as:
 
-The targeting condition was:
+- User identity
+- Security-group memberships
+- Security identifiers
+- Authorization information
 
-```text
-The user is a member of:
-ADRIANLAB\HR_Users
-```
+Changing group membership in Active Directory does not necessarily rebuild an already authenticated user's token.
 
-This created the following deployment model:
+Emily therefore signed completely out of CLIENT01 and signed back in.
 
-```text
-HR_Users
-    ↓
-Item-level targeting
-    ↓
-HR Drive Mapping GPO
-    ↓
-H: → \\DC01\HR
-```
+This created a new Windows security token containing her updated departmental memberships.
 
-## Initial Transfer Verification
+---
 
-Emily completely signed out of CLIENT01 and signed back in after the security-group changes.
+## Group Membership Verification
 
-A full sign-out was important because Windows needed to create a new security token containing the updated group memberships.
-
-The following command was used:
+After signing back into CLIENT01, Emily's current security groups were checked using:
 
 ```cmd
 whoami /groups
 ```
 
-The results confirmed:
+The expected result was:
 
 ```text
-ADRIANLAB\HR_Users       → Present
-ADRIANLAB\Finance_Users  → Not Present
+ADRIANLAB\HR_Users
 ```
 
-This verified that Emily's current authentication session recognized her new department membership.
+The previous Finance membership should no longer appear:
 
-## Group Policy Refresh
+```text
+ADRIANLAB\Finance_Users
+```
 
-The following command was used to refresh Group Policy:
+This confirmed that the current Windows session recognized the department transfer.
+
+---
+
+## Group Policy Processing
+
+Departmental drive mappings were deployed through Group Policy Preferences using security-group-based item-level targeting.
+
+Group Policy could be refreshed using:
 
 ```cmd
 gpupdate /force
 ```
 
-After the policy refresh, File Explorer was opened to:
+The expected targeting logic after Emily's transfer was:
 
 ```text
-This PC
+Finance Drive Mapping
+Finance_Users membership?
+        |
+        v
+       No
+        |
+        v
+Do not provide F:
+
+
+HR Drive Mapping
+HR_Users membership?
+        |
+        v
+       Yes
+        |
+        v
+Provide H:
 ```
 
-The new HR drive appeared:
+This allowed the workstation configuration to adjust according to Emily's new Active Directory role.
+
+---
+
+## Mapped Drive Verification
+
+File Explorer was opened on CLIENT01 after Emily signed back into the domain.
+
+The expected departmental drive was:
 
 ```text
 HR (H:)
 ```
 
-The drive mapped to:
+The previous Finance drive:
+
+```text
+Finance (F:)
+```
+
+was no longer available.
+
+This demonstrated that Group Policy drive deployment reflected Emily's current security-group membership.
+
+---
+
+## HR Share Verification
+
+Emily opened:
+
+```text
+HR (H:)
+```
+
+which mapped to:
 
 ```text
 \\DC01\HR
 ```
 
-Emily successfully opened the HR share and accessed the HR files.
+The HR share opened successfully and the departmental test file was available.
 
-## HR File Access Test
+**HR Access Result: ✅ PASS**
 
-Emily verified her Modify-level access by creating:
+---
 
-```text
-Emily-HR-Test.txt
-```
+## Finance Access Removal
 
-inside the HR shared folder.
+The transfer also required verification that Emily could no longer access her previous department's data.
 
-The file was successfully saved.
+The Finance mapped drive was no longer presented to Emily after the updated Group Policy configuration was processed.
 
-**Result: PASS**
-
-## Finance Access Removal Test
-
-After the department transfer, Emily was no longer a member of:
-
-```text
-ADRIANLAB\Finance_Users
-```
-
-However, the old Finance F: drive was still displayed on CLIENT01.
-
-The drive was disabled or inaccessible, but the stale mapping remained visible.
-
-This demonstrated that removing authorization to a resource and removing a mapped-drive object are separate processes.
-
-## Troubleshooting the Stale Finance Drive
-
-The following command was used to inspect Emily's active network-drive mappings:
-
-```cmd
-net use
-```
-
-The Finance drive still appeared as:
-
-```text
-F: → \\DC01\Finance
-```
-
-The following command was also used to inspect the Group Policy Objects being processed for Emily:
-
-```cmd
-gpresult /r
-```
-
-Both the Finance and HR Drive Mapping GPOs appeared in the Group Policy results.
-
-This was expected because the GPOs were linked to the domain.
-
-Item-level targeting determined whether the individual drive-mapping preference applied to the user.
-
-## Automatic Drive Cleanup Configuration
-
-The Finance Drive Mapping GPO was edited.
-
-Under the Common tab, the following option was enabled:
-
-```text
-Remove this item when it is no longer applied
-```
-
-The existing item-level targeting condition remained:
-
-```text
-ADRIANLAB\Finance_Users
-```
-
-The HR Drive Mapping GPO was also configured with:
-
-```text
-Remove this item when it is no longer applied
-```
-
-while retaining its targeting condition:
-
-```text
-ADRIANLAB\HR_Users
-```
-
-This configuration was intended to support both resource provisioning and resource removal.
-
-The desired behavior was:
-
-```text
-Join Finance_Users
-        ↓
-F: appears
-
-Leave Finance_Users
-        ↓
-F: removed
-```
-
-and:
-
-```text
-Join HR_Users
-        ↓
-H: appears
-
-Leave HR_Users
-        ↓
-H: removed
-```
-
-## Existing Stale Mapping
-
-The existing F: mapping had been created before the automatic removal behavior was configured.
-
-Because the stale mapping remained, it was manually removed from Emily's workstation using:
-
-```cmd
-net use F: /delete
-```
-
-Windows confirmed that the F: mapping was deleted successfully.
-
-The current network mappings were then checked again using:
-
-```cmd
-net use
-```
-
-The Finance F: mapping was no longer present.
-
-## Final Group Policy Refresh
-
-Group Policy was refreshed again using:
-
-```cmd
-gpupdate /force
-```
-
-Emily then completely signed out and signed back into CLIENT01.
-
-This provided a clean test of the final access configuration.
-
-## Final Drive Verification
-
-File Explorer was opened to:
-
-```text
-This PC
-```
-
-The final drive state was:
-
-```text
-HR (H:)       → Present
-Finance (F:)  → Gone
-```
-
-The HR drive remained accessible.
-
-**HR Drive Result: PASS**
-
-**Finance Drive Removal Result: PASS**
-
-## Direct Finance Access Test
-
-Removing the F: drive only removed the convenient mapped-drive representation.
-
-A separate test was performed to verify that Emily's actual authorization to Finance data had also been revoked.
-
-The following UNC path was manually entered:
+Direct access to the Finance share was also tested using:
 
 ```text
 \\DC01\Finance
 ```
 
-Windows denied Emily access to the Finance share.
-
-**Result: PASS**
-
-This confirmed that removing Emily from:
+Because Emily was no longer a member of:
 
 ```text
-Finance_Users
+ADRIANLAB\Finance_Users
 ```
 
-had revoked her actual Finance permissions.
+access to the Finance share was denied.
 
-## Mapped Drive vs. Authorization
+**Finance Access Removal: ✅ PASS**
 
-This task demonstrated an important security distinction.
+This negative test was important because successful HR access alone would not prove that the transfer had been completed securely.
 
-A mapped drive is primarily a convenient way to present a network resource to a user.
+---
 
-For example:
+## Verification Summary
+
+| Test | Expected Result | Actual Result |
+|------|-----------------|---------------|
+| Emily moved to HR OU | HR placement | ✅ Pass |
+| Finance_Users membership | Removed | ✅ Pass |
+| HR_Users membership | Added | ✅ Pass |
+| `whoami /groups` shows HR_Users | Present | ✅ Pass |
+| `whoami /groups` shows Finance_Users | Absent | ✅ Pass |
+| HR H: drive | Available | ✅ Pass |
+| HR share | Access granted | ✅ Pass |
+| Finance F: drive | Removed | ✅ Pass |
+| Finance share | Access denied | ✅ Pass |
+
+---
+
+## Principle of Least Privilege
+
+This scenario demonstrates an important part of access management:
+
+> When an employee changes roles, obsolete access should be removed as well as new access being granted.
+
+Simply adding Emily to `HR_Users` would have provided HR access but could have left her with unnecessary Finance permissions.
+
+Removing `Finance_Users` reduced her permissions to the resources required for her current role.
+
+---
+
+## Why Security Groups Simplify Transfers
+
+Because departmental permissions and drive mappings were assigned through security groups, the transfer did not require manually changing permissions on every individual resource.
+
+The administrative workflow was primarily:
 
 ```text
-F: → \\DC01\Finance
+Remove old departmental group
+            |
+            v
+Add new departmental group
+            |
+            v
+Refresh user authentication
+            |
+            v
+Existing permissions and GPOs adjust access
 ```
 
-Removing F: from File Explorer does not by itself secure the Finance folder.
+This is more scalable than assigning file and workstation permissions directly to individual employees.
 
-The actual authorization was controlled by:
+---
 
-```text
-Active Directory security-group membership
-        ↓
-SMB share permissions
-        ↓
-NTFS permissions
-```
-
-Therefore:
-
-```text
-Removing F:
-```
-
-cleaned up the user's interface, while:
-
-```text
-Removing Emily from Finance_Users
-```
-
-actually revoked access to Finance data.
-
-## Deprovisioning
-
-The department transfer demonstrated deprovisioning.
-
-When an employee changes jobs, IT should remove permissions that are no longer required rather than simply adding new access.
-
-Emily's transfer required both:
-
-```text
-Provision new HR access
-```
-
-and:
-
-```text
-Remove obsolete Finance access
-```
-
-This supports the principle of least privilege by ensuring employees retain only the access required for their current responsibilities.
-
-## Troubleshooting Commands Used
-
-The following commands were used during the transfer and troubleshooting process:
+## Commands Used
 
 ```cmd
 whoami /groups
 gpupdate /force
-gpresult /r
 net use
-net use F: /delete
 ```
 
-## Final Verification Summary
+`net use` can also be used to review the network-drive connections recognized by the client workstation.
 
-The completed department transfer was verified as follows:
+---
 
-```text
-Emily moved to HR OU: PASS
-HR_Users membership: PASS
-Finance_Users membership removed: PASS
-HR H: drive mapped: PASS
-HR share accessible: PASS
-HR file creation: PASS
-Finance F: drive removed: PASS
-Direct Finance UNC access denied: PASS
-```
+## Technologies Used
 
-## Security Concepts
-
-This task demonstrated:
-
-- Least privilege
-- Role-based access control
-- Access provisioning
-- Access deprovisioning
-- Security-group-based authorization
-- Organizational Unit management
-- Separation of mapped drives and resource permissions
-- Positive and negative access testing
-- Authentication security tokens
-- Centralized Group Policy administration
-
-## Troubleshooting Methodology
-
-The troubleshooting process followed a layered approach:
-
-```text
-Verify group membership
-        ↓
-Verify new resource access
-        ↓
-Identify stale resource
-        ↓
-Inspect network mappings
-        ↓
-Inspect Group Policy processing
-        ↓
-Correct drive cleanup configuration
-        ↓
-Remove existing stale mapping
-        ↓
-Refresh policy
-        ↓
-Verify new access
-        ↓
-Verify old access is denied
-```
-
-## Ticket Resolution
-
-Emily Rodriguez was successfully transferred from Finance to HR.
-
-Her Active Directory Organizational Unit and security-group memberships were updated, the HR departmental share and mapped drive were provisioned, and her previous Finance permissions were revoked.
-
-A stale Finance drive mapping was identified using `net use` and Group Policy was inspected using `gpresult /r`.
-
-The drive-mapping policies were updated to remove mappings when they no longer apply, and the existing stale Finance mapping was removed.
-
-Final testing confirmed that Emily could access HR resources while direct access to the Finance share was denied.
-
-## Concepts Practiced
-
-- Active Directory user administration
+- Windows Server
+- Active Directory Domain Services
+- Active Directory Users and Computers
+- Active Directory Security Groups
 - Organizational Units
-- Active Directory security groups
-- Employee department transfers
-- Role-based access control
-- SMB share permissions
-- NTFS permissions
-- Group Policy Management
 - Group Policy Preferences
-- Drive Maps
-- Item-level targeting
-- Mapped network drives
-- Access provisioning
-- Access deprovisioning
-- Windows security tokens
-- `whoami /groups`
-- `gpupdate /force`
-- `gpresult /r`
-- `net use`
-- UNC paths
-- Least privilege
-- Troubleshooting
-- Positive and negative verification
+- SMB File Sharing
+- NTFS Permissions
+- Windows 11
+- Oracle VirtualBox
+
+---
+
+## Skills Demonstrated
+
+- Active Directory User Administration
+- Employee Access Lifecycle Management
+- Department Transfers
+- Security Group Administration
+- Organizational Unit Management
+- Group Policy Preferences
+- Item-Level Targeting
+- SMB and NTFS Permissions
+- Windows Security Tokens
+- Least-Privilege Access Control
+- Access Revocation
+- Positive and Negative Testing
+
+---
+
+## Screenshots
+
+### HR Drive Verification
+
+The following screenshot shows the HR H: drive successfully mapped on CLIENT01 after Emily's department and security-group assignments were updated.
+
+![HR Mapped Drive](../screenshots/group-policy/hr-mapped-drive.png)
+
+*Figure 1. HR H: drive available on CLIENT01 after the department transfer.*
+
+### HR Shared Folder
+
+The following screenshot shows the HR departmental share successfully opening through the mapped H: drive.
+
+![HR Shared Folder](../screenshots/file-sharing/hr-share-files.png)
+
+*Figure 2. HR departmental files accessible through the mapped H: drive.*
+
+---
+
+## Lessons Learned
+
+This exercise demonstrated that employee access management continues throughout the user's employment lifecycle. Provisioning new access is only part of a department transfer; access associated with the employee's previous role must also be removed.
+
+The exercise also reinforced the relationship between Active Directory security groups, Windows security tokens, Group Policy Preferences, SMB permissions, and NTFS permissions. A change made in Active Directory may require the user to establish a new login session before the updated authorization information is reflected on the workstation.
+
+Using departmental security groups made the transfer significantly easier. Instead of modifying individual file permissions and workstation settings, the employee's group memberships were changed and the existing access-control infrastructure handled the corresponding resource changes.
+
+Finally, testing both sides of the transfer was essential: successful access to HR resources demonstrated that the new permissions worked, while denied access to Finance resources demonstrated that obsolete permissions had been successfully revoked.
