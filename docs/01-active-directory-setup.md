@@ -1,57 +1,133 @@
 # Active Directory Environment Setup
 
+## Overview
+
+This project establishes the Windows Active Directory environment used throughout the Help Desk lab. The environment provides a domain controller, a Windows 11 client workstation, and the Active Directory infrastructure required for user management, Group Policy, file sharing, and authentication.
+
+---
+
 ## Objective
 
-Build a virtual Windows domain environment that can be used to practice common Help Desk and Windows system administration tasks.
+Build a Windows Active Directory domain that can be used to practice common Help Desk and Windows system administration tasks.
 
-## Environment
+---
 
-| System | Configuration |
-|---|---|
-| DC01 | Windows Server Domain Controller |
-| CLIENT01 | Windows 11 Enterprise workstation |
-| Domain | adrianlab.local |
+## Lab Environment
+
+| Component | Configuration |
+|-----------|---------------|
+| Domain Controller | DC01 |
+| Client Workstation | CLIENT01 |
+| Operating System | Windows Server / Windows 11 Enterprise |
+| Domain Name | adrianlab.local |
 | DC01 IPv4 | 10.0.2.10 |
 | CLIENT01 IPv4 | 10.0.2.15 |
+| Virtualization Platform | Oracle VirtualBox |
 
-## Configuration
+---
 
-Windows Server was configured as the domain controller for the `adrianlab.local` Active Directory domain.
+## Active Directory Configuration
 
-The environment included:
+The Active Directory environment was configured with the following core services:
 
-- Active Directory Domain Services
+- Active Directory Domain Services (AD DS)
 - DNS
-- Organizational Units
-- Domain users
-- Security groups
+- Organizational Units (OUs)
+- Domain Users
+- Security Groups
 - Domain-joined Windows 11 workstation
 
-Departmental Organizational Units were created to organize users according to business function.
+Departmental Organizational Units were created to separate users according to business function.
 
-Security groups were created separately from the OUs so that access to resources could be assigned based on job responsibilities.
+Security Groups were created independently from Organizational Units so permissions could be assigned using Role-Based Access Control (RBAC).
+
+---
+
+## Organizational Units
+
+The following Organizational Units were created:
+
+- HR
+- Finance
+- IT
+- Sales
+- Employees
+- Servers
+- Workstations
+
+These Organizational Units provide logical organization while allowing Group Policy and administrative delegation to be managed efficiently.
+
+---
 
 ## Client Configuration
 
-CLIENT01 was configured to use the domain controller for DNS resolution.
+CLIENT01 was configured to:
 
-The workstation was then joined to:
+- Use DC01 for DNS resolution
+- Join the `adrianlab.local` domain
+- Authenticate using Active Directory user accounts
+- Receive Group Policy settings from the domain controller
 
-`adrianlab.local`
+Domain authentication was verified by successfully signing into CLIENT01 using a domain account.
 
-Domain authentication was verified by signing into CLIENT01 using an Active Directory user account.
+---
 
 ## Verification
 
-The logged-in identity was verified from CLIENT01 using:
+The environment was validated by confirming:
+
+| Verification Test | Result |
+|-------------------|--------|
+| Active Directory installed | ✅ Pass |
+| DNS operational | ✅ Pass |
+| Domain created | ✅ Pass |
+| CLIENT01 joined domain | ✅ Pass |
+| Domain user authentication | ✅ Pass |
+
+The logged-in identity was confirmed using:
 
 ```cmd
 whoami
+```
+
+---
+
+## Technologies Used
+
+- Windows Server
+- Windows 11 Enterprise
+- Active Directory Domain Services
+- DNS
+- Oracle VirtualBox
+- Git
+- GitHub
+
+---
+
+## Skills Demonstrated
+
+- Active Directory Administration
+- Organizational Unit Management
+- Domain Administration
+- Windows Authentication
+- DNS Configuration
+- Windows Client Management
+- Virtual Machine Administration
+
+---
 
 ## Screenshots
 
 ### Active Directory Domain Structure
 
-The following screenshot shows the Active Directory Users and Computers environment used for the `adrianlab.local` domain, including the organizational structure created for the help desk lab.
+The Active Directory Users and Computers console showing the completed `adrianlab.local` environment.
 
 ![Active Directory Domain Structure](../screenshots/active-directory/aduc-domain-structure.png)
+
+---
+
+## Lessons Learned
+
+This exercise established the Active Directory environment that supports every subsequent Help Desk scenario in this project.
+
+Separating Organizational Units from Security Groups provides a scalable design that simplifies administration while allowing permissions to be assigned according to job responsibilities rather than individual users.
