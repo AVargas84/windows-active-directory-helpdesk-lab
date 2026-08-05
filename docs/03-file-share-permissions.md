@@ -1,45 +1,80 @@
-# Secure Department File Share
+# Secure Finance File Share
 
-## Scenario
+## Overview
 
-The Finance department needed a shared network folder that Finance employees could modify while users outside Finance were denied access.
+This exercise demonstrates how to create and secure a departmental network file share using Active Directory security groups, SMB share permissions, and NTFS permissions.
+
+The Finance department required a shared folder that authorized Finance employees could modify while users outside the department were denied access.
+
+---
 
 ## Objective
 
-Create and secure an SMB network share for the Finance department using Active Directory security groups, share permissions, and NTFS permissions.
+Configure a secure Finance departmental share that provides authorized users with the access required to perform their work while following the principle of least privilege.
 
-## Share Configuration
+---
 
-The Finance folder was created on DC01 at:
+## Lab Environment
 
+| Component | Configuration |
+|-----------|---------------|
+| Domain Controller | DC01 |
+| Client Workstation | CLIENT01 |
+| Domain | adrianlab.local |
+| Local Folder | C:\Shares\Finance |
+| Network Share | \\DC01\Finance |
+| Security Group | ADRIANLAB\Finance_Users |
+| Authorized Test User | Mike Chen |
+| Unauthorized Test User | Sarah Johnson |
+
+---
+
+## Finance Share Configuration
+
+The Finance departmental folder was created on DC01 at:
+
+```text
 C:\Shares\Finance
+```
 
-The folder was published as the following network share:
+The folder was published as an SMB network share:
 
+```text
 \\DC01\Finance
+```
+
+Access was assigned to the Active Directory security group:
+
+```text
+ADRIANLAB\Finance_Users
+```
+
+Using a security group instead of assigning permissions directly to individual employees makes the environment easier to administer and scale.
+
+---
 
 ## Share Permissions
 
-The default `Everyone` permission was removed.
+The default broad `Everyone` permission was removed.
 
-The following Active Directory security group was added:
+The Finance security group received:
 
-ADRIANLAB\Finance_Users
+| Security Principal | Share Permission |
+|--------------------|------------------|
+| Finance_Users | Change |
+| Finance_Users | Read |
 
-The group received:
+Full Control was not granted to standard Finance users.
 
-- Change
-- Read
+This configuration allows authorized employees to work with departmental files without giving them unnecessary administrative control over the share.
 
-Full Control was not granted.
+---
 
 ## NTFS Permissions
 
-The Finance folder was configured so that:
+The Finance folder was also secured using NTFS permissions.
 
-ADRIANLAB\Finance_Users
-
-received the following NTFS permissions:
+`ADRIANLAB\Finance_Users` received:
 
 - Modify
 - Read & execute
@@ -47,109 +82,137 @@ received the following NTFS permissions:
 - Read
 - Write
 
-Inheritance was disabled and the inherited permissions were converted into explicit permissions.
+Permission inheritance was disabled and the inherited permissions were converted into explicit permissions.
 
-The broad `ADRIANLAB\Users` entries were removed.
+Broad `ADRIANLAB\Users` entries were removed while necessary administrative and system entries were retained.
 
-Administrative and system entries such as the following were retained:
+---
 
-- SYSTEM
-- Administrators
-- CREATOR OWNER
+## Permission Model
+
+Users accessing the Finance folder over the network are subject to both SMB share permissions and NTFS permissions.
+
+The configuration used in this lab was:
+
+```text
+Finance_Users
+      |
+      +---- SMB Share Permissions: Change + Read
+      |
+      +---- NTFS Permissions: Modify
+      |
+      +---- Effective Finance File Access
+```
+
+This follows the principle of least privilege by providing the access Finance employees need without granting Full Control.
+
+---
 
 ## Troubleshooting
 
-The first network access attempt failed even though the NTFS permissions appeared to be configured correctly.
+During initial testing, the Finance folder could not be accessed even though the NTFS permissions appeared to be configured correctly.
 
-The following commands were used during troubleshooting:
+The following commands were used during the investigation:
 
 ```cmd
 net view \\10.0.2.10
 whoami /groups
 ```
 
-```markdown
-`net view` confirmed that CLIENT01 could communicate with DC01 and that SMB services were responding.
+`net view` confirmed that CLIENT01 could communicate with DC01 and query its available network shares.
 
-`whoami /groups` confirmed that the Finance user was a member of:
+`whoami /groups` confirmed that the authorized Finance user was a member of:
 
+```text
 ADRIANLAB\Finance_Users
+```
 
-Further investigation showed that the Finance folder had the appropriate NTFS permissions but had not actually been published as an SMB share.
+Because network connectivity and group membership were working, troubleshooting shifted to the server-side share configuration.
 
-The issue was resolved by enabling Advanced Sharing for the Finance folder and configuring the appropriate share permissions.
+The investigation revealed that the Finance folder had appropriate NTFS permissions but had not actually been published as an SMB share.
+
+The issue was resolved by enabling **Advanced Sharing** for the Finance folder and applying the appropriate share permissions.
+
+---
 
 ## Verification
 
-Access was tested using both an authorized and unauthorized user.
+Access was tested using both an authorized Finance employee and an unauthorized HR employee.
 
-### Finance User Test
+### Authorized User Test
 
 Mike Chen, a member of `Finance_Users`, successfully:
 
 - Opened `\\DC01\Finance`
 - Opened `Finance-Test.txt`
 - Created `Mike-Test.txt`
-- Saved changes to the Finance share
+- Saved the new file to the Finance share
 
-Result: PASS
+**Result: ✅ PASS**
 
 ### Unauthorized User Test
 
-Sarah Johnson, an HR user who was not a member of `Finance_Users`, attempted to access:
+Sarah Johnson was not a member of `Finance_Users`.
 
+Sarah attempted to access:
+
+```text
 \\DC01\Finance
+```
 
-Windows denied access.
+Windows denied access to the Finance share.
 
-Result: PASS
+**Result: ✅ PASS**
 
-## Share Permissions vs. NTFS Permissions
+---
 
-The Finance share uses two permission layers.
+## Verification Summary
 
-Share permissions:
+| Test | Expected Result | Actual Result |
+|------|-----------------|---------------|
+| Mike opens Finance share | Access granted | ✅ Pass |
+| Mike opens Finance-Test.txt | File opens | ✅ Pass |
+| Mike creates Mike-Test.txt | File saves | ✅ Pass |
+| Sarah opens Finance share | Access denied | ✅ Pass |
 
-Finance_Users → Change + Read
+Testing both an authorized and unauthorized user confirmed that the access-control configuration was functioning as intended.
 
-NTFS permissions:
+---
 
-Finance_Users → Modify
+## Commands Used
 
-When a user accesses the folder over the network, Windows evaluates both permission layers.
+```cmd
+net view \\10.0.2.10
+whoami /groups
+```
 
-This configuration allows Finance employees to create, modify, and delete files without granting them Full Control over the folder.
+---
 
-## Security Group-Based Access
+## Technologies Used
 
-Permissions were assigned to the `Finance_Users` security group rather than directly to individual employees.
+- Windows Server
+- Active Directory Domain Services
+- Active Directory Security Groups
+- SMB File Sharing
+- NTFS Permissions
+- Windows 11
+- Oracle VirtualBox
 
-This makes access easier to administer because new Finance employees can receive the appropriate permissions simply by being added to the Finance security group.
+---
 
-## Security Concepts
+## Skills Demonstrated
 
-This task demonstrated:
+- SMB File Share Administration
+- NTFS Permission Management
+- Active Directory Security Groups
+- Role-Based Access Control
+- Least Privilege
+- Permission Inheritance
+- Windows Network Troubleshooting
+- Positive and Negative Access Testing
+- Root-Cause Analysis
 
-- Least privilege
-- Role-based access control
-- Security-group-based permissions
-- Separation of SMB and NTFS permissions
-- Positive access testing
-- Negative access testing
-
-## Concepts Practiced
-
-- SMB file sharing
-- NTFS permissions
-- Share permissions
-- Active Directory security groups
-- Permission inheritance
-- Advanced Sharing
-- Least privilege
-- `net view`
-- `whoami /groups`
-- Access-control troubleshooting
-- Positive and negative verification
+---
 
 ## Screenshots
 
@@ -158,3 +221,17 @@ This task demonstrated:
 The following screenshot shows the Active Directory users and security-group structure used to manage Finance department access.
 
 ![Finance Users and Security Group](../screenshots/active-directory/finance-users-group.png)
+
+*Figure 1. Active Directory structure used to manage Finance department access.*
+
+---
+
+## Lessons Learned
+
+This exercise demonstrated that Windows network file access depends on multiple layers of authorization.
+
+NTFS permissions control access to the underlying files and folders, while SMB share permissions control access when the resource is reached over the network. Both must be configured correctly for network access to function as intended.
+
+The troubleshooting process also reinforced the importance of testing one layer at a time. Verifying connectivity and security-group membership before modifying permissions helped isolate the actual problem: the folder had not been published as an SMB share.
+
+Using the `Finance_Users` security group instead of assigning permissions directly to individual employees also demonstrated how role-based access control makes user administration more scalable and easier to maintain.
