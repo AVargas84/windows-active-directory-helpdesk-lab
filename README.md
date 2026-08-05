@@ -1,6 +1,6 @@
 # 🖥️ Windows Active Directory Help Desk Lab Portfolio
 
-![Windows Server](https://img.shields.io/badge/Windows_Server-2022-0078D6?logo=windows&logoColor=white)
+![Windows Server](https://img.shields.io/badge/Windows_Server-2025-0078D6?logo=windows&logoColor=white)
 ![Active Directory](https://img.shields.io/badge/Active_Directory-Lab-2E8B57)
 ![Oracle VirtualBox](https://img.shields.io/badge/Oracle_VirtualBox-7.x-183A61?logo=virtualbox&logoColor=white)
 ![GitHub](https://img.shields.io/badge/GitHub-Portfolio-181717?logo=github&logoColor=white)
@@ -28,7 +28,7 @@
 
 ## 📖 Project Overview
 
-This project documents the design, implementation, and troubleshooting of a Windows Active Directory home lab built using **Oracle VirtualBox**, **Windows Server 2022**, **Windows 10**, and **Ubuntu Linux**.
+This project documents the design, implementation, and troubleshooting of a Windows Active Directory home lab built using **Oracle VirtualBox**, **Windows Server 2025**, **Windows 11 Enterprise**, and **Ubuntu Linux**.
 
 The lab simulates common Help Desk and Junior Systems Administrator responsibilities, including:
 
@@ -60,6 +60,8 @@ Each scenario includes the original objective, implementation steps, troubleshoo
 - 📸 Documented each lab with screenshots and verification steps.
 - 📚 Published the project using Git and GitHub.
 
+---
+
 ## 🛠️ Skills Demonstrated
 
 | Windows Administration | Networking | Security | Professional Skills |
@@ -77,8 +79,8 @@ Each scenario includes the original objective, implementation steps, troubleshoo
 | Component | Technology |
 |-----------|------------|
 | Hypervisor | Oracle VirtualBox |
-| Domain Controller | Windows Server 2022 |
-| Client Workstation | Windows 10 |
+| Domain Controller | Windows Server 2025 |
+| Client Workstation | Windows 11 Enterprise |
 | Documentation Workstation | Ubuntu Linux |
 | Version Control | Git |
 | Repository Hosting | GitHub |
@@ -87,8 +89,8 @@ Each scenario includes the original objective, implementation steps, troubleshoo
 
 ## 💻 Technologies Used
 
-- Windows Server 2022
-- Windows 10
+- Windows Server 2025
+- Windows 11 Enterprise
 - Ubuntu Desktop
 - Oracle VirtualBox
 - Active Directory Domain Services (AD DS)
@@ -103,29 +105,30 @@ Each scenario includes the original objective, implementation steps, troubleshoo
 ## 🌐 Lab Architecture
 
 ```text
-                          🌐 Home Lab
+                          Home Lab
 
-                   Oracle VirtualBox
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-        ▼                ▼                ▼
-┌────────────────┐ ┌────────────────┐ ┌────────────────┐
-│      DC01      │ │    CLIENT01    │ │     Ubuntu     │
-│ Windows Server │ │   Windows 10   │ │ Ubuntu Desktop │
-│ Active Directory│ │ Domain Joined │ │ Git / GitHub   │
-└────────┬───────┘ └────────────────┘ └────────────────┘
-         │
-         ▼
-  Active Directory
-         │
- ┌───────┴────────┐
- │                │
-Finance OU      HR OU
- │                │
-Finance_Users   HR_Users
- │                │
-Finance Share   HR Share
+                    Oracle VirtualBox
+                          |
+        +-----------------+-----------------+
+        |                 |                 |
+        v                 v                 v
++----------------+ +----------------+ +----------------+
+|      DC01      | |    CLIENT01    | |     Ubuntu     |
+| Windows Server | | Windows 11     | | Ubuntu Desktop |
+|      2025      | | Enterprise     | | Git / GitHub   |
+| AD DS and DNS  | | Domain Joined  | | Documentation  |
++--------+-------+ +----------------+ +----------------+
+         |
+         v
+   adrianlab.local
+         |
+   +-----+------+
+   |            |
+Finance OU     HR OU
+   |            |
+Finance_Users  HR_Users
+   |            |
+Finance Share  HR Share
 ```
 
 ---
@@ -227,6 +230,8 @@ Planned additions include:
 | Windows Clients | 1 |
 | Linux Systems | 1 |
 | Technologies Used | 10+ |
+
+---
 
 ## 👨‍💻 About the Author
 
