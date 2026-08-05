@@ -1,54 +1,64 @@
 # New Employee Onboarding
 
-## Scenario
+## Overview
 
-A new employee, Emily Rodriguez, joined the Finance department and needed an Active Directory account with access to the same departmental resources as existing Finance employees.
+This exercise demonstrates how Active Directory can be used to provision a new employee with the appropriate domain account and departmental resources.
 
-The goal was to provision the employee using the existing Active Directory security-group structure instead of assigning permissions directly to the individual user.
+Emily Rodriguez joined the Finance department and required an Active Directory account, secure first-login credentials, Finance security-group membership, access to the departmental file share, and the automatically deployed Finance F: drive.
+
+---
 
 ## Objective
 
-Create a new Active Directory user account, configure first-login password requirements, assign the appropriate departmental security group, and verify that existing permissions and Group Policy automatically provide the required Finance resources.
+Provision a new Finance employee using Active Directory and verify that existing security-group permissions and Group Policy automatically provide the resources required for the employee's role.
 
-## New Employee Information
+---
 
-The following user account was created:
+## Lab Environment
 
-```text
-Name: Emily Rodriguez
-Username: erodriguez
-Department: Finance
-Domain: ADRIANLAB
-```
+| Component | Configuration |
+|-----------|---------------|
+| Domain Controller | DC01 |
+| Client Workstation | CLIENT01 |
+| Domain | adrianlab.local |
+| New Employee | Emily Rodriguez |
+| Username | erodriguez |
+| Initial Department | Finance |
+| Security Group | ADRIANLAB\Finance_Users |
+| Finance Share | \\DC01\Finance |
+| Finance Drive | F: |
 
-The account was created inside the Finance Organizational Unit in Active Directory.
+---
 
 ## Active Directory Account Creation
 
-The account was created using:
+A new domain account was created for:
 
 ```text
-Active Directory Users and Computers
-→ Finance OU
-→ New
-→ User
+Emily Rodriguez
 ```
 
-The user logon name was configured as:
+with the username:
 
 ```text
 erodriguez
 ```
 
-The domain account could be used to authenticate as:
+The account was created in the Finance Organizational Unit using **Active Directory Users and Computers**.
+
+The resulting domain account was:
 
 ```text
 ADRIANLAB\erodriguez
 ```
 
+Organizing the employee within the Finance OU provided a logical structure for Active Directory administration.
+
+---
+
 ## Initial Password Configuration
 
-A temporary password was assigned during account creation.
+A temporary password was assigned when the account was created.
 
 The following option was enabled:
 
@@ -56,7 +66,9 @@ The following option was enabled:
 User must change password at next logon
 ```
 
-The following options remained disabled:
+This required Emily to replace the administrator-assigned temporary password during her first successful domain login.
+
+The following options were not enabled:
 
 ```text
 User cannot change password
@@ -64,77 +76,107 @@ Password never expires
 Account is disabled
 ```
 
-This required the employee to replace the temporary password during the first successful domain login.
+Requiring a password change at first login helps prevent continued use of credentials initially known by an administrator.
 
-## Finance Security Group
+---
 
-The new employee needed the same departmental access as other Finance employees.
+## Security Group Assignment
 
-Emily was added to:
+Emily needed the same Finance resources as other employees in the department.
+
+Instead of assigning permissions directly to her individual account, Emily was added to:
 
 ```text
 ADRIANLAB\Finance_Users
 ```
 
-The group membership was configured through:
+The group membership was managed through:
+
+```text
+Active Directory Users and Computers
+→ Emily Rodriguez
+→ Properties
+→ Member Of
+```
+
+This allowed the existing Finance access-control configuration to be reused for the new employee.
+
+---
+
+## Group-Based Provisioning
+
+The Finance environment had already been configured to use `Finance_Users` for departmental access.
+
+The provisioning model was:
 
 ```text
 Emily Rodriguez
-→ Properties
-→ Member Of
-→ Add
-→ Finance_Users
+        |
+        v
+Finance_Users
+        |
+   +----+------------------+
+   |                       |
+   v                       v
+SMB + NTFS             GPO Item-Level
+Permissions              Targeting
+   |                       |
+   v                       v
+Finance Share           Finance F:
+Access                  Drive Mapping
 ```
 
-Using a security group allowed the existing Finance permissions and Group Policy configuration to provide resources automatically.
+Because permissions were assigned to the security group rather than individual employees, no new Finance folder permissions or employee-specific GPO needed to be created.
 
-No direct permissions were assigned to Emily's individual account.
+---
 
-## Client Login
+## First Domain Login
 
-Emily signed into the domain-joined CLIENT01 workstation using:
+Emily signed into the domain-joined CLIENT01 workstation using her new domain account.
 
-```text
-ADRIANLAB\erodriguez
-```
-
-During the first login, Windows required the temporary password to be changed.
-
-After authentication, the logged-in identity was verified using:
+The logged-in identity could be verified using:
 
 ```cmd
 whoami
 ```
 
-The expected identity was:
+The expected result was:
 
 ```text
 adrianlab\erodriguez
 ```
 
+During the initial login process, Windows required the temporary password to be changed.
+
+---
+
 ## Group Membership Verification
 
-The following command was used to inspect the security groups contained in Emily's current Windows security token:
+Emily's current security-group memberships were checked using:
 
 ```cmd
 whoami /groups
 ```
 
-The expected Finance group was:
+The expected Finance membership was:
 
 ```text
 ADRIANLAB\Finance_Users
 ```
 
+This command displays the groups contained in the user's current Windows security token and is useful when troubleshooting authorization or Group Policy targeting problems.
+
+---
+
 ## Troubleshooting
 
-During the initial test, `Finance_Users` did not appear in the output of:
+During initial testing, `Finance_Users` did not appear in the output of:
 
 ```cmd
 whoami /groups
 ```
 
-Because the required security group was missing, troubleshooting focused on Active Directory group membership rather than immediately changing the Finance share, NTFS permissions, or Group Policy.
+Because the required Finance security group was missing, troubleshooting focused on Emily's Active Directory group membership rather than immediately changing the Finance share, NTFS permissions, or Group Policy configuration.
 
 Emily's account was checked in:
 
@@ -145,9 +187,7 @@ Active Directory Users and Computers
 → Member Of
 ```
 
-The issue was traced to the Finance group membership/current authentication state.
-
-The appropriate membership was corrected so that Emily belonged to:
+The required Finance membership was corrected so that Emily belonged to:
 
 ```text
 ADRIANLAB\Finance_Users
@@ -155,69 +195,66 @@ ADRIANLAB\Finance_Users
 
 Emily then completely signed out of CLIENT01 and signed back in.
 
-A new login session was important because Windows creates a security token during authentication that contains the user's security-group memberships.
+---
+
+## Windows Security Token
+
+Signing out and back in was an important part of the repair.
+
+Windows creates a security token when a user authenticates. The token contains information used for authorization, including:
+
+- User identity
+- Security-group memberships
+- Security identifiers
+- Authorization information
+
+If Active Directory group membership changes while a user is already signed in, the existing security token may not immediately reflect the new membership.
+
+A fresh login session generated a new token containing Emily's corrected Finance membership.
+
+---
 
 ## Troubleshooting Verification
 
-After signing back in, the following command was run again:
+After Emily signed back into CLIENT01, the following command was run again:
 
 ```cmd
 whoami /groups
 ```
 
-This time the output contained:
+The output now contained:
 
 ```text
 ADRIANLAB\Finance_Users
 ```
 
-This confirmed that Emily's current Windows session recognized the correct Finance group membership.
+**Group Membership Result: ✅ PASS**
 
-## Automatic Resource Provisioning
+This confirmed that Emily's current Windows session recognized the corrected Active Directory membership.
 
-The Finance infrastructure had already been configured during previous tasks.
+---
 
-The existing configuration included:
+## Group Policy Processing
 
-```text
-Finance_Users
-        ↓
-SMB and NTFS permissions
-        ↓
-Access to \\DC01\Finance
-```
-
-The Finance Drive Mapping Group Policy also used:
+The existing Finance Drive Mapping GPO used item-level targeting based on:
 
 ```text
-Finance_Users
-        ↓
-Item-level targeting
-        ↓
-F: → \\DC01\Finance
+ADRIANLAB\Finance_Users
 ```
 
-Because Emily was added to `Finance_Users`, no additional Finance folder permissions or employee-specific drive mapping needed to be created.
-
-## Group Policy Refresh
-
-If necessary, Group Policy could be manually refreshed using:
+Group Policy could be manually refreshed using:
 
 ```cmd
 gpupdate /force
 ```
 
-This forces Windows to process the latest user and computer Group Policy settings.
+Once Emily's current security token contained the correct Finance membership, she met the targeting condition for the Finance drive mapping.
+
+---
 
 ## Finance Drive Verification
 
-After Emily had the correct group membership, File Explorer was opened to:
-
-```text
-This PC
-```
-
-The Finance drive appeared as:
+File Explorer was opened on CLIENT01 and the following mapped drive appeared:
 
 ```text
 Finance (F:)
@@ -229,93 +266,65 @@ The drive mapped to:
 \\DC01\Finance
 ```
 
-Emily successfully opened the Finance drive and accessed the existing departmental files.
+Emily successfully opened the Finance departmental share through the mapped drive.
 
-## File Access Test
+**Drive Mapping Result: ✅ PASS**
 
-Emily verified that she had Modify-level access to the Finance share by creating:
+---
+
+## File Access Verification
+
+Emily tested her access by creating a text file in the Finance share.
+
+The test file was:
 
 ```text
 Emily-Test.txt
 ```
 
-The file was successfully saved inside the Finance shared folder.
+The file was successfully created and saved.
 
-This confirmed that Emily had both:
+This confirmed that Emily had the Modify-level access required to work with departmental files.
 
-- Access to the Finance share
-- Permission to create and modify files
+**File Creation Result: ✅ PASS**
 
-**Result: PASS**
+---
 
-## Provisioning Model
+## Verification Summary
 
-The onboarding process demonstrated the following access model:
+| Test | Expected Result | Actual Result |
+|------|-----------------|---------------|
+| Domain account created | Account available | ✅ Pass |
+| First-login password change | Password change required | ✅ Pass |
+| Finance_Users membership | Membership present | ✅ Pass |
+| Domain authentication | Login successful | ✅ Pass |
+| Finance F: drive | Drive appears | ✅ Pass |
+| Finance share | Share opens | ✅ Pass |
+| Emily-Test.txt | File saves successfully | ✅ Pass |
 
-```text
-Emily Rodriguez
-        ↓
-Finance_Users
-        ↓
- ┌──────────────────────────┐
- ↓                          ↓
-SMB/NTFS permissions        GPO item-level targeting
- ↓                          ↓
-Finance folder access       Finance F: drive
-```
-
-The employee received departmental resources primarily because of the assigned security-group membership.
+---
 
 ## Why Group-Based Access Was Used
 
-Permissions were not assigned directly to:
+Permissions were assigned to:
+
+```text
+Finance_Users
+```
+
+rather than directly to:
 
 ```text
 erodriguez
 ```
 
-Instead, access was assigned to:
+This provides a more scalable access-control model.
 
-```text
-Finance_Users
-```
+For future Finance employees, administrators can assign the appropriate resources primarily by adding the employee to the existing Finance security group instead of modifying folder permissions and Group Policy for every new account.
 
-This makes administration more scalable.
+This approach supports **Role-Based Access Control (RBAC)** and simplifies both onboarding and future access changes.
 
-When another employee joins Finance, IT can add the employee to the same security group rather than modifying the Finance folder permissions and Group Policy for every individual user.
-
-## Security Token Concept
-
-Windows creates a security token when a user authenticates.
-
-The token contains information such as:
-
-- User identity
-- Security-group memberships
-- Security identifiers
-- Authorization information
-
-This explains why signing completely out and back in may be required after changing a user's Active Directory security-group membership.
-
-The command:
-
-```cmd
-whoami /groups
-```
-
-was used to verify which group memberships Windows recognized in the current session.
-
-## Security Concepts
-
-This task demonstrated:
-
-- Role-based access control
-- Security-group-based provisioning
-- Least privilege
-- Centralized identity management
-- First-login password security
-- Separation of users and permissions
-- Verification of user authorization
+---
 
 ## Commands Used
 
@@ -325,46 +334,57 @@ whoami /groups
 gpupdate /force
 ```
 
-## Verification Summary
+---
 
-The completed onboarding was verified as follows:
+## Technologies Used
 
-```text
-Domain account created: PASS
-Temporary password configured: PASS
-Password change at first login: PASS
-Finance_Users membership: PASS
-Domain authentication: PASS
-Finance F: drive mapping: PASS
-Finance share access: PASS
-File creation test: PASS
-```
-
-## Ticket Resolution
-
-The new Finance employee was successfully provisioned with an Active Directory domain account and assigned to the appropriate Finance security group.
-
-Existing SMB permissions, NTFS permissions, and Group Policy Preferences automatically provided the employee with the required departmental resources.
-
-A missing group-membership issue encountered during testing was identified using `whoami /groups`, corrected in Active Directory, and verified after establishing a fresh login session.
-
-## Concepts Practiced
-
-- Active Directory user creation
-- Organizational Units
-- User account administration
-- Temporary passwords
-- First-login password changes
-- Active Directory security groups
-- Role-based access control
-- Windows security tokens
-- `whoami`
-- `whoami /groups`
-- `gpupdate /force`
+- Windows Server
+- Active Directory Domain Services
+- Active Directory Users and Computers
+- Active Directory Security Groups
 - Group Policy Preferences
-- Mapped network drives
-- SMB and NTFS permissions
-- Employee onboarding
-- Resource provisioning
-- Troubleshooting
-- Verification after remediation
+- SMB File Sharing
+- NTFS Permissions
+- Windows 11
+- Oracle VirtualBox
+
+---
+
+## Skills Demonstrated
+
+- Active Directory User Provisioning
+- Employee Onboarding
+- Organizational Unit Management
+- Security Group Administration
+- Temporary Password Management
+- Windows Authentication
+- Windows Security Token Troubleshooting
+- Group Policy Preferences
+- Mapped Network Drives
+- SMB and NTFS Permissions
+- Role-Based Access Control
+- Verification and Testing
+
+---
+
+## Screenshots
+
+### Finance User and Security Group Structure
+
+The Finance Active Directory structure demonstrates the security-group model used to provide departmental resources to Finance employees.
+
+![Finance Users and Security Group](../screenshots/active-directory/finance-users-group.png)
+
+*Figure 1. Active Directory Finance users and security-group configuration.*
+
+---
+
+## Lessons Learned
+
+This exercise demonstrated how security-group-based access control can simplify employee onboarding.
+
+Instead of configuring individual permissions for every new employee, existing resources can be associated with departmental security groups. Adding the employee to the appropriate group can then provide access to file shares and targeted Group Policy resources.
+
+The troubleshooting process also demonstrated the importance of Windows security tokens. Correcting Active Directory membership alone may not immediately change the permissions recognized by an existing Windows session. Signing out and back in allows Windows to generate a new security token containing the updated group memberships.
+
+This approach provides a scalable foundation for both employee onboarding and future access management.
