@@ -1,0 +1,12 @@
+# Sensitive credential files
+TemporaryPassword.csv
+TemporaryPassword.csv
+
+# PowerShell provisioning output containing credentials
+**/Output/TemporaryPasswords.csv
+**/Output/TemporaryPasswords.csv
+
+# General secrets / credentials
+*.key
+*.secret
+.env
