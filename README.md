@@ -1,815 +1,640 @@
-# 🖥️ Windows Active Directory Help Desk & PowerShell Automation Lab
+# 🖥️ Windows Active Directory Help Desk Lab Portfolio
 
-Hands-on Windows Active Directory home lab simulating common **Help Desk, IT Support, and junior Windows system administration tasks**, including user administration, Group Policy, network file sharing, access control, employee lifecycle management, troubleshooting, and PowerShell automation.
-
-The environment was built using **Windows Server, Windows 11 Enterprise, Active Directory, PowerShell, and Oracle VirtualBox** and documented using **Git, GitHub, Markdown, and screenshot-based verification**.
+> A hands-on Windows Server Active Directory home lab demonstrating real-world Help Desk and Junior Systems Administrator tasks including Active Directory administration, Group Policy, DNS, SMB file sharing, NTFS permissions, PowerShell automation, user provisioning, troubleshooting, and security best practices.
 
 ---
 
-## 🎯 Project Overview
+## 📑 Table of Contents
 
-This project was designed to provide practical experience administering, troubleshooting, and automating a Windows domain environment.
+- 📖 Project Overview
+- ⭐ Project Highlights
+- 🛠️ Skills Demonstrated
+- 🏗️ Lab Environment
+- 💻 Technologies Used
+- 🌐 Lab Architecture
+- 📋 Help Desk Scenarios
+- ⚡ PowerShell Administration & Automation
+- 🌍 DNS Administration & Troubleshooting
+- 📸 Screenshot Evidence
+- 🔒 Security Concepts
+- 🎓 Lessons Learned
+- 🚀 Future Improvements
+- 📊 Repository Statistics
+- 👨‍💻 About the Author
+- ⭐ Repository Status
 
-The project is divided into two major phases:
+---
 
-### Part 1 — Active Directory Help Desk Administration
+# 📖 Project Overview
 
-The first phase focused on manually configuring and troubleshooting:
+This project documents the design, implementation, administration, automation, and troubleshooting of a Windows Active Directory home lab built using Oracle VirtualBox, Windows Server 2022, Windows 10, and Ubuntu Linux.
 
-- Active Directory Domain Services
-- Domain users and Organizational Units
-- Security groups
-- Account lockouts
-- SMB network shares
+The environment simulates common Help Desk and Junior Systems Administrator responsibilities, including:
+
+- Active Directory administration
+- User provisioning and deprovisioning
+- Organizational Unit (OU) management
+- Security group administration
+- SMB file sharing
 - NTFS permissions
-- Group Policy Preferences
-- Mapped network drives
-- Employee onboarding
-- Department transfers
-- Access provisioning and revocation
-- Missing drive troubleshooting
-- SMB share troubleshooting
+- Share permissions
+- Group Policy configuration
+- Drive mapping
+- DNS administration
+- Forward and reverse DNS
+- PowerShell administration
+- Bulk user provisioning
+- Account lockout troubleshooting
+- User offboarding
+- Help Desk troubleshooting
+- Root cause analysis
+- Verification testing
+- Technical documentation
 
-### Part 2 — PowerShell Automation
-
-After completing the administration tasks manually, PowerShell was used to automate repetitive Active Directory operations including:
-
-- User creation
-- OU placement
-- Security-group assignment
-- Password resets
-- Account unlocking
-- Multi-department provisioning
-- Duplicate-user detection
-- Error handling
-- CSV bulk onboarding
-- Automated temporary-password generation
-- Provisioning logs
-- Employee offboarding
-- Group-access removal
-- Moving disabled users to a dedicated OU
-
-This progression demonstrates both an understanding of the underlying Windows administration process and the ability to automate it.
+Each scenario includes the objective, implementation steps, troubleshooting process, verification, and supporting evidence.
 
 ---
 
-## 🏗️ Lab Architecture
+# ⭐ Project Highlights
+
+- 🏢 Built and administered a Windows Active Directory domain.
+- 👥 Created and managed Organizational Units and security groups.
+- 🔐 Implemented Role-Based Access Control (RBAC).
+- 💽 Configured SMB file shares with NTFS permissions.
+- ⚙️ Automated drive mappings using Group Policy Preferences.
+- 👤 Provisioned, transferred, and deprovisioned domain users.
+- 🔒 Diagnosed and resolved account lockouts.
+- ⚡ Created PowerShell scripts for Active Directory administration.
+- 👥 Automated bulk user provisioning from CSV data.
+- 📝 Added provisioning results and temporary-credential logging.
+- 🌍 Administered Active Directory-integrated DNS.
+- 🔎 Worked with A, PTR, and SRV DNS records.
+- 🧭 Configured forward and reverse DNS resolution.
+- 🛠️ Diagnosed incorrect client DNS configuration.
+- 🛠️ Diagnosed incorrect DNS A records.
+- 🌐 Tested SMB connectivity using TCP port 445.
+- 📊 Audited DNS records with PowerShell.
+- 🧹 Performed DNS record cleanup.
+- 📸 Documented configuration, failures, repairs, and verification.
+- 📚 Published the project using Git and GitHub.
+
+---
+
+# 🛠️ Skills Demonstrated
+
+| Windows Administration | Networking & DNS | Security | Automation & Professional Skills |
+|---|---|---|---|
+| Active Directory Users and Computers | DNS Administration | NTFS Permissions | PowerShell |
+| Organizational Units | Forward Lookup Zones | Share Permissions | Active Directory Cmdlets |
+| User & Group Management | Reverse Lookup Zones | Least Privilege | Bulk User Provisioning |
+| Group Policy Management | A Records | Role-Based Access Control | CSV Processing |
+| Group Policy Preferences | PTR Records | Authentication | Error Handling |
+| Account Lockout Management | SRV Records | Security Groups | Logging |
+| User Provisioning | DNS Cache | User Deprovisioning | Technical Documentation |
+| User Offboarding | Domain Controller Discovery | Access Validation | Root Cause Analysis |
+| SMB Administration | SMB / TCP 445 | Positive & Negative Testing | Troubleshooting |
+| Windows Server Administration | Name Resolution | Secure Credential Handling | Git & GitHub |
+
+---
+
+# 🏗️ Lab Environment
 
 | Component | Configuration |
-|-----------|---------------|
-| Domain | `adrianlab.local` |
-| Domain Controller | `DC01` |
-| Client Workstation | `CLIENT01` |
-| Server Platform | Windows Server |
-| Client Platform | Windows 11 Enterprise |
-| Virtualization | Oracle VirtualBox |
-| Finance Share | `\\DC01\Finance` |
-| HR Share | `\\DC01\HR` |
-| Finance Drive | `F:` |
-| HR Drive | `H:` |
-| PowerShell Module | `ActiveDirectory` |
-
-### Environment Flow
-
-```text
-                 adrianlab.local
-                        |
-                 +------+------+
-                 |             |
-                DC01        CLIENT01
-                 |
-        +--------+---------+
-        |                  |
- Active Directory      File Services
-        |                  |
-   +----+----+        +----+----+
-   |         |        |         |
-Finance     HR      Finance     HR
-Users      Users     Share     Share
-   |         |        |         |
-   +----+----+        +----+----+
-        |                  |
-        +--------+---------+
-                 |
-           Group Policy
-                 |
-          +------+------+
-          |             |
-       Finance F:      HR H:
-                 |
-                 v
-        PowerShell Automation
-```
+|---|---|
+| Hypervisor | Oracle VirtualBox |
+| Domain Controller | DC01 |
+| Server OS | Windows Server 2022 |
+| Domain | adrianlab.local |
+| DC01 IPv4 | 10.0.2.10 |
+| Client Workstation | CLIENT01 |
+| Client OS | Windows 10 |
+| CLIENT01 IPv4 | 10.0.2.3 |
+| DNS Server | DC01 / 10.0.2.10 |
+| Documentation Workstation | Ubuntu Linux |
+| Version Control | Git |
+| Repository Hosting | GitHub |
 
 ---
 
-## 🧰 Technologies Used
+# 💻 Technologies Used
 
-![Windows Server](https://img.shields.io/badge/Windows%20Server-Active%20Directory-0078D4?style=flat-square)
-![Windows 11](https://img.shields.io/badge/Windows%2011-Client-0078D4?style=flat-square)
-![Active Directory](https://img.shields.io/badge/Active%20Directory-AD%20DS-0078D4?style=flat-square)
-![PowerShell](https://img.shields.io/badge/PowerShell-Automation-5391FE?style=flat-square)
-![Group Policy](https://img.shields.io/badge/Group%20Policy-GPO-0078D4?style=flat-square)
-![VirtualBox](https://img.shields.io/badge/VirtualBox-Lab-183A61?style=flat-square)
-![Git](https://img.shields.io/badge/Git-Version%20Control-F05032?style=flat-square)
-![GitHub](https://img.shields.io/badge/GitHub-Portfolio-181717?style=flat-square)
-
-- Windows Server
-- Windows 11 Enterprise
-- Active Directory Domain Services
+- Windows Server 2022
+- Windows 10
+- Ubuntu Desktop
+- Oracle VirtualBox
+- Active Directory Domain Services (AD DS)
 - Active Directory Users and Computers
-- PowerShell
-- Active Directory PowerShell Module
-- DNS
 - Group Policy Management
-- Group Policy Preferences
+- Windows DNS Server
+- PowerShell
 - SMB File Sharing
 - NTFS Permissions
-- Windows Command Line
-- Oracle VirtualBox
 - Git
 - GitHub
-- Markdown
 
 ---
 
-## 🔐 Access Control Design
-
-Departmental access is based on **Active Directory security-group membership** rather than permissions assigned directly to individual employees.
+# 🌐 Lab Architecture
 
 ```text
-Employee
-   |
-   v
-Department Security Group
-   |
-   +----------+----------+
-   |                     |
-   v                     v
-SMB + NTFS          Group Policy
-Permissions           Targeting
-   |                     |
-   v                     v
-Department Share     Mapped Drive
+                         🌐 Home Lab
+                              |
+                       Oracle VirtualBox
+                              |
+          +-------------------+-------------------+
+          |                   |                   |
+          v                   v                   v
+   +-------------+      +-------------+      +-------------+
+   |    DC01     |      |  CLIENT01   |      |   Ubuntu    |
+   | Win Server  |      | Windows 10  |      | Git/GitHub  |
+   | 10.0.2.10   |      | 10.0.2.3    |      |   Docs      |
+   +------+------+      +------+------+      +-------------+
+          |                    |
+          |                    |
+          +---------+----------+
+                    |
+                    v
+            adrianlab.local
+                    |
+          +---------+---------+
+          |                   |
+          v                   v
+      Finance OU            HR OU
+          |                   |
+          v                   v
+    Finance_Users          HR_Users
+          |                   |
+          v                   v
+    Finance Share          HR Share
 ```
 
-Examples:
+DC01 provides:
 
 ```text
-Finance_Users → Finance Share → F:
-HR_Users      → HR Share      → H:
+Active Directory Domain Services
+            +
+          DNS
+            +
+      SMB File Shares
+            +
+      Group Policy
 ```
 
-This model supports **Role-Based Access Control (RBAC)** and the **principle of least privilege**.
+CLIENT01 is domain joined and uses DC01 as its Active Directory DNS server.
 
 ---
 
-# 📚 Part 1 — Active Directory Help Desk Administration
-
-## Lab Documentation
+# 📋 Help Desk Scenarios
 
 | # | Scenario | Documentation |
-|---|----------|---------------|
-| 01 | Active Directory Environment Setup | [View Lab](docs/01-active-directory-setup.md) |
-| 02 | Account Lockout Troubleshooting | [View Lab](docs/02-account-lockout.md) |
-| 03 | Secure Finance File Share | [View Lab](docs/03-file-share-permissions.md) |
-| 04 | Group Policy Drive Mapping | [View Lab](docs/04-group-policy-drive-mapping.md) |
-| 05 | New Employee Onboarding | [View Lab](docs/05-user-onboarding.md) |
-| 06 | Employee Department Transfer | [View Lab](docs/06-department-transfer.md) |
-| 07 | Missing Mapped Drive Troubleshooting | [View Lab](docs/07-missing-drive-troubleshooting.md) |
-| 08 | SMB Share Troubleshooting | [View Lab](docs/08-smb-share-troubleshooting.md) |
-| 09 | Complete Project Summary | [View Summary](docs/09-project-summary.md) |
-| 10 | PowerShell Automation | [View Automation Documentation](docs/10-powershell-automation.md) |
-
-> **Start here:** [Read the complete project summary](docs/09-project-summary.md) for an overview of the Active Directory architecture, access-control model, troubleshooting scenarios, and lessons learned.
-
----
-
-## 📸 Project Evidence
-
-### Active Directory Environment
-
-The `adrianlab.local` Active Directory environment used throughout the lab.
-
-[![Active Directory Domain Structure](screenshots/active-directory/aduc-domain-structure.png)](screenshots/active-directory/aduc-domain-structure.png)
-
-*Active Directory Users and Computers showing the lab domain structure.*
+|---|---|---|
+| 01 | 🏗️ Active Directory Setup | [01 - Active Directory Setup](docs/01-active-directory-setup.md) |
+| 02 | 🔐 Account Lockout Troubleshooting | [02 - Account Lockout Troubleshooting](docs/02-account-lockout.md) |
+| 03 | 📁 Secure Department File Share | [03 - File Share Permissions](docs/03-file-share-permissions.md) |
+| 04 | 💽 Group Policy Drive Mapping | [04 - Group Policy Drive Mapping](docs/04-group-policy-drive-mapping.md) |
+| 05 | 👤 User Onboarding | [05 - User Onboarding](docs/05-user-onboarding.md) |
+| 06 | 🔄 Department Transfer | [06 - Department Transfer](docs/06-department-transfer.md) |
+| 07 | 🔍 Missing Department Drive Troubleshooting | [07 - Missing Department Drive Troubleshooting](docs/07-missing-department-drive.md) |
+| 08 | 🌐 SMB Share Troubleshooting | [08 - SMB Share Troubleshooting](docs/08-smb-share-troubleshooting.md) |
+| 09 | ⚡ PowerShell Active Directory Administration | [09 - PowerShell AD Administration](docs/09-powershell-ad-administration.md) |
+| 10 | 🤖 PowerShell Automation & Bulk Provisioning | [10 - PowerShell Automation](docs/10-powershell-automation.md) |
+| 11 | 🌍 DNS Administration & Troubleshooting | [11 - DNS Administration & Troubleshooting](docs/11-dns-administration-troubleshooting.md) |
 
 ---
 
-### Finance Users and Security Group
+# ⚡ PowerShell Administration & Automation
 
-Active Directory security groups were used to provide department-based resource access.
+The lab progressed from GUI-based Active Directory administration to command-line administration and automation with PowerShell.
 
-[![Finance Users and Security Group](screenshots/active-directory/finance-users-group.png)](screenshots/active-directory/finance-users-group.png)
+Tasks included:
 
-*Finance users and departmental security-group configuration.*
+- Querying Active Directory users
+- Creating users
+- Creating department users
+- Assigning security-group membership
+- Resetting passwords
+- Unlocking accounts
+- Disabling accounts
+- Moving users between Organizational Units
+- Detecting duplicate usernames
+- Bulk provisioning users from CSV files
+- Generating temporary passwords
+- Logging provisioning results
+- Exporting temporary credentials
+- Verifying created accounts
 
----
-
-### Finance Group Policy Drive Mapping
-
-Group Policy Preferences automatically deployed the Finance F: drive to authorized users.
-
-[![Finance Drive Mapping GPO](screenshots/group-policy/finance-drive-mapping-gpo.png)](screenshots/group-policy/finance-drive-mapping-gpo.png)
-
-*Finance drive mapping configured through Group Policy Preferences.*
-
----
-
-### HR Drive Verification
-
-After the appropriate Active Directory and Group Policy configuration was applied, CLIENT01 received the HR H: drive.
-
-[![HR Mapped Drive](screenshots/group-policy/hr-mapped-drive.png)](screenshots/group-policy/hr-mapped-drive.png)
-
-*HR H: drive successfully mapped on CLIENT01.*
-
----
-
-### HR File Share Verification
-
-The mapped H: drive successfully provided access to the HR departmental files.
-
-[![HR Shared Folder](screenshots/file-sharing/hr-share-files.png)](screenshots/file-sharing/hr-share-files.png)
-
-*HR departmental files accessible through the mapped network drive.*
-
----
-
-### Account Lockout Troubleshooting
-
-Active Directory Users and Computers was used to identify and resolve an intentionally locked domain account.
-
-[![Account Lockout](screenshots/troubleshooting/account-lockout.png)](screenshots/troubleshooting/account-lockout.png)
-
-*Account lockout scenario used to practice domain-user troubleshooting.*
-
----
-
-# ⚡ Part 2 — PowerShell Automation
-
-## Automation Objective
-
-The PowerShell phase builds on the manual Active Directory administration completed in Part 1.
-
-The goal was to replace repetitive administrative work with reusable scripts while maintaining the same Active Directory design and security controls.
-
-The progression was:
-
-```text
-Manual Administration
-        ↓
-Single PowerShell Commands
-        ↓
-Reusable User Provisioning
-        ↓
-Multi-Department Automation
-        ↓
-Validation and Error Handling
-        ↓
-CSV Bulk Provisioning
-        ↓
-Automated Passwords and Logs
-        ↓
-Employee Offboarding
-```
-
----
-
-## 🛠️ PowerShell Tasks Completed
-
-| Task | Automation |
-|------|------------|
-| 01 | Create and provision a single Active Directory user |
-| 02 | Reset password and unlock an AD account |
-| 03 | Build a reusable Finance onboarding script |
-| 04 | Build multi-department provisioning logic |
-| 05 | Add duplicate detection and error handling |
-| 06 | Bulk provision users from CSV |
-| 07 | Generate temporary passwords and provisioning logs |
-| 08 | Automate employee offboarding |
-
-Detailed documentation:
-
-➡️ [PowerShell Automation Documentation](docs/10-powershell-automation.md)
-
----
-
-## 📜 PowerShell Scripts
-
-### `New-FinanceUser.ps1`
-
-Creates a new Finance employee by:
-
-- Collecting first and last name
-- Generating a username
-- Prompting securely for a temporary password
-- Creating the Active Directory user
-- Placing the account in the Finance OU
-- Adding `Finance_Users`
-- Requiring a password change at first login
-
-[View Script](scripts/New-FinanceUser.ps1)
-
----
-
-### `New-DepartmentUser.ps1`
-
-Expands onboarding to multiple departments.
-
-Supported departments:
-
-```text
-Finance
-HR
-IT
-Sales
-```
-
-A PowerShell `switch` statement automatically selects the correct:
-
-- Department value
-- Organizational Unit
-- Security group
-
-[View Script](scripts/New-DepartmentUser.ps1)
-
----
-
-### `Bulk-NewUsers.ps1`
-
-Processes multiple employees from a CSV file using:
+Example Active Directory query:
 
 ```powershell
-Import-Csv
-foreach
+Get-ADUser dbrooks -Properties Department,MemberOf,PasswordLastSet
 ```
 
-The script automatically:
-
-- Generates usernames
-- Checks for duplicates
-- Selects departmental OUs
-- Creates AD accounts
-- Assigns departmental security groups
-
-[View Script](scripts/Bulk-NewUsers.ps1)
-
----
-
-### `Bulk-NewUsers-Logged.ps1`
-
-Extends bulk provisioning with:
-
-- Automatic temporary-password generation
-- Duplicate detection
-- Department validation
-- `try` / `catch` error handling
-- Provisioning status logs
-- Separate temporary credential output
-
-[View Script](scripts/Bulk-NewUsers-Logged.ps1)
-
----
-
-### `Disable-ADUser.ps1`
-
-Automates employee offboarding.
-
-The script:
-
-```text
-Finds user
-   ↓
-Disables account
-   ↓
-Removes department groups
-   ↓
-Moves account to Disabled Users OU
-   ↓
-Preserves account for auditing
-```
-
-[View Script](scripts/Disable-ADUser.ps1)
-
----
-
-## 📄 Sample CSV Input
-
-Safe sample CSV files are included in:
-
-```text
-samples/
-```
-
-Example:
-
-```csv
-FirstName,LastName,Department
-Amanda,Reed,Finance
-Marcus,Lee,HR
-Jessica,Carter,IT
-Brian,Foster,Sales
-```
-
-Files:
-
-- [NewUsers.csv](samples/NewUsers.csv)
-- [NewUsers-Task7.csv](samples/NewUsers-Task7.csv)
-
-No real passwords or live credentials are included.
-
----
-
-## 🔒 Credential Security
-
-The logged bulk-provisioning script creates a temporary credential file during execution.
-
-Credential files are intentionally excluded from GitHub using `.gitignore`.
-
-Protected examples include:
-
-```gitignore
-TemporaryPasswords.csv
-TemporaryPassword.csv
-**/Output/TemporaryPasswords.csv
-**/Output/TemporaryPassword.csv
-.env
-*.key
-*.secret
-```
-
-This keeps sensitive temporary credentials separate from public source control.
-
----
-
-## ⌨️ Active Directory PowerShell Cmdlets
-
-PowerShell commands used throughout Part 2 include:
+Example group-membership verification:
 
 ```powershell
-Get-ADUser
-New-ADUser
-Set-ADUser
-Set-ADAccountPassword
-Unlock-ADAccount
-Disable-ADAccount
-Add-ADGroupMember
-Remove-ADGroupMember
-Get-ADPrincipalGroupMembership
-Get-ADGroupMember
-Get-ADOrganizationalUnit
-Move-ADObject
+Get-ADPrincipalGroupMembership dbrooks |
+Select-Object Name
+```
+
+Bulk provisioning expanded the lab from individual account administration into repeatable administrative automation.
+
+---
+
+# 🌍 DNS Administration & Troubleshooting
+
+DNS administration was added to demonstrate the relationship between Active Directory, name resolution, and Windows network services.
+
+The DNS module included:
+
+- Active Directory-integrated DNS
+- Forward lookup zones
+- Reverse lookup zones
+- A records
+- PTR records
+- SRV records
+- LDAP service discovery
+- Domain-controller discovery
+- DNS client configuration
+- DNS cache behavior
+- PowerShell DNS administration
+- DNS record auditing
+- DNS cleanup
+
+The primary DNS server for the environment is:
+
+```text
+DC01
+10.0.2.10
+```
+
+CLIENT01 uses:
+
+```text
+DNS Server → 10.0.2.10
+```
+
+## Active Directory Service Discovery
+
+LDAP SRV records were tested using:
+
+```cmd
+nslookup -type=SRV _ldap._tcp.dc._msdcs.adrianlab.local
+```
+
+The query returned:
+
+```text
+dc01.adrianlab.local
+Port 389
+```
+
+Domain-controller discovery was verified using:
+
+```cmd
+nltest /dsgetdc:adrianlab.local
 ```
 
 ---
 
-## 🧠 PowerShell Concepts Practiced
+## DNS Troubleshooting Ticket #3002
 
-- Cmdlets
-- Variables
-- SecureString
-- Functions
-- Arrays
-- `[PSCustomObject]`
-- `Read-Host`
-- `if`
-- `switch`
-- `foreach`
-- `continue`
-- `try`
-- `catch`
-- `-ErrorAction`
-- String concatenation
-- `.Substring()`
-- `.ToLower()`
-- `Import-Csv`
-- `Export-Csv`
-- Input validation
-- Duplicate detection
-- Logging
-- Reusable `.ps1` scripts
+### Problem
+
+CLIENT01 could reach DC01 by IP address but could not access it by hostname.
+
+### Evidence
+
+```text
+ping dc01.adrianlab.local
+→ Could not find host
+
+Resolve-DnsName dc01.adrianlab.local
+→ DNS timeout
+
+ping 10.0.2.10
+→ Successful
+```
+
+### Root Cause
+
+CLIENT01 was incorrectly configured to use:
+
+```text
+10.0.2.99
+```
+
+instead of:
+
+```text
+10.0.2.10
+```
+
+### Resolution
+
+The correct DNS server was restored:
+
+```powershell
+Set-DnsClientServerAddress `
+    -InterfaceAlias "Ethernet" `
+    -ServerAddresses 10.0.2.10
+```
+
+The DNS cache was then cleared and resolution was verified.
 
 ---
 
-## 🔎 Troubleshooting Methodology
+## DNS Troubleshooting Ticket #3003
 
-A consistent troubleshooting process was used throughout both phases of the project:
+### Problem
+
+CLIENT01 was configured with the correct DNS server, but DC01 resolved to the wrong IP address.
+
+DNS returned:
+
+```text
+dc01.adrianlab.local → 10.0.2.20
+```
+
+while DC01 actually used:
+
+```text
+10.0.2.10
+```
+
+### Diagnosis
+
+```powershell
+Test-NetConnection dc01.adrianlab.local -Port 445
+```
+
+returned:
+
+```text
+RemoteAddress    : 10.0.2.20
+TcpTestSucceeded : False
+```
+
+while:
+
+```powershell
+Test-NetConnection 10.0.2.10 -Port 445
+```
+
+returned:
+
+```text
+RemoteAddress    : 10.0.2.10
+TcpTestSucceeded : True
+```
+
+### Root Cause
+
+The DC01 A record contained the incorrect IP address.
+
+### Resolution
+
+The A record was corrected from:
+
+```text
+10.0.2.20
+```
+
+to:
+
+```text
+10.0.2.10
+```
+
+CLIENT01's DNS cache was cleared and SMB connectivity was verified again.
+
+---
+
+# 📸 DNS Screenshot Evidence
+
+## Incorrect Client DNS Configuration
+
+![DNS Client Misconfiguration](screenshots/dns/dns-client-misconfiguration-failure.png)
+
+CLIENT01 could reach DC01 by IP address but DNS name resolution failed.
+
+---
+
+## DNS Configuration Restored
+
+![DNS Troubleshooting Resolved](screenshots/dns/dns-troubleshooting-resolved.png)
+
+CLIENT01 successfully resolved DC01 and reached SMB TCP port 445 after the correct DNS server was restored.
+
+---
+
+## Incorrect DNS A Record
+
+![DNS Record Failure](screenshots/dns/dns-record-failure.png)
+
+DNS resolved DC01 to the incorrect `10.0.2.20` address while direct communication with the actual `10.0.2.10` server succeeded.
+
+---
+
+## Corrected DNS A Record
+
+![DNS Record Fixed](screenshots/dns/dns-record-fixed.png)
+
+DC01 again resolved to `10.0.2.10` and TCP port 445 connectivity succeeded.
+
+---
+
+## PowerShell DNS Audit
+
+![DNS Record Audit](screenshots/dns/dns-record-audit.png)
+
+PowerShell was used to audit forward A records and reverse PTR records.
+
+---
+
+# 🔒 Security Concepts
+
+Throughout this project, I implemented and verified Windows security concepts including:
+
+- 🔐 Least Privilege
+- 👥 Role-Based Access Control (RBAC)
+- 🛡️ Security Group-Based Authorization
+- 📁 NTFS Permissions
+- 🌐 SMB Share Permissions
+- 💽 Group Policy Preferences
+- 👤 User Provisioning
+- 🔄 Department Transfers
+- 🚫 User Deprovisioning
+- 🔒 Account Lockout Management
+- 🔑 Temporary Credential Handling
+- ✅ Positive and Negative Access Testing
+- 🌍 Active Directory DNS
+- 🧹 Administrative Cleanup
+
+The lab emphasizes granting access through security groups rather than assigning permissions directly to individual users whenever possible.
+
+---
+
+# 🔧 Troubleshooting Methodology
+
+The lab uses a repeatable troubleshooting process:
 
 ```text
 Observe
    |
    v
-Verify
+Gather Evidence
+   |
+   v
+Test
+   |
+   v
+Compare
    |
    v
 Isolate
    |
    v
+Identify Root Cause
+   |
+   v
 Correct
    |
    v
-Retest
+Verify
+   |
+   v
+Document
 ```
 
-Examples included:
+An important lesson from the DNS module was that similar symptoms do not necessarily have the same root cause.
 
-- Identifying missing security-group membership
-- Troubleshooting missing mapped drives
-- Verifying Windows security tokens
-- Distinguishing Group Policy issues from permission issues
-- Identifying missing SMB shares
-- Troubleshooting PowerShell syntax errors
-- Correcting password-generation logic
-- Identifying partial script execution
-- Verifying automation output instead of trusting success messages
+For example:
+
+```text
+Cannot access server by hostname
+              |
+      +-------+-------+
+      |               |
+      v               v
+Wrong client       Wrong DNS
+DNS server         A record
+      |               |
+      v               v
+Ticket #3002       Ticket #3003
+```
+
+Testing both hostname resolution and direct IP connectivity helped isolate the correct layer before making changes.
 
 ---
 
-## ⌨️ Windows Diagnostic Commands
+# 🎓 Lessons Learned
 
-Common Windows commands used during troubleshooting:
-
-```cmd
-whoami
-whoami /groups
-net use
-net view \\DC01
-gpupdate /force
-```
-
-| Command | Purpose |
-|---------|---------|
-| `whoami` | Verify the currently authenticated user |
-| `whoami /groups` | Inspect security groups in the current Windows token |
-| `net use` | Review mapped drives and network connections |
-| `net view \\DC01` | Review SMB shares advertised by DC01 |
-| `gpupdate /force` | Force Group Policy processing |
-
----
-
-## 💼 Skills Demonstrated
-
-### Active Directory & Identity
+Building this lab strengthened my understanding of:
 
 - Active Directory administration
-- User account provisioning
 - Organizational Unit management
 - Security group administration
-- Account lockout resolution
-- Employee onboarding
-- Department transfers
-- Access provisioning and revocation
-- Employee offboarding
-- Identity lifecycle management
-
-### PowerShell Automation
-
-- PowerShell scripting
-- Active Directory cmdlets
-- Reusable `.ps1` scripts
-- Multi-department provisioning
-- CSV bulk user creation
-- Functions
-- Conditional logic
-- Loops
-- Error handling
-- Input validation
-- Logging
-- Automated account lifecycle management
-
-### Windows Administration
-
-- Windows Server administration
-- Windows 11 domain clients
-- Domain authentication
-- Windows security tokens
-- DNS-based domain communication
-- Command-line diagnostics
-
-### Group Policy & File Services
-
-- Group Policy Management
-- Group Policy Preferences
-- Item-level targeting
-- Mapped network drives
-- SMB shares
-- NTFS permissions
-- Permission inheritance
-- UNC path testing
-
-### Troubleshooting
-
-- Root-cause analysis
-- Layered troubleshooting
-- Authentication troubleshooting
-- Permission troubleshooting
-- Mapped-drive troubleshooting
-- SMB troubleshooting
-- PowerShell debugging
-- Positive and negative testing
-
-### Documentation & Version Control
-
+- Group Policy deployment
+- SMB file sharing
+- NTFS and share permissions
+- User provisioning and deprovisioning
+- Windows authentication
+- Account lockout troubleshooting
+- PowerShell administration
+- PowerShell automation
+- Bulk user provisioning
+- CSV-based automation
+- DNS administration
+- Forward and reverse DNS
+- A, PTR, and SRV records
+- DNS caching
+- Domain-controller discovery
+- TCP port testing
+- Help Desk troubleshooting methodology
+- Root cause analysis
+- Verification testing
 - Technical documentation
-- Markdown
-- Git
-- GitHub
-- `.gitignore`
-- Credential protection
-- Version control
-- Screenshot-based verification
+- Git and GitHub portfolio management
+
+One of the most important lessons from this project is that troubleshooting should focus on **isolating the failing layer before changing the environment**.
+
+For example, successful communication with an IP address but failure using the hostname suggests investigating name resolution before assuming that the server or network is unavailable.
+
+The project also reinforced the importance of documenting failures as well as successful configurations. Showing the original symptom, diagnostic evidence, root cause, repair, and verification provides a much stronger demonstration of troubleshooting ability than showing only the finished configuration.
 
 ---
 
-## 🧪 Example Help Desk Scenario
+# 🚀 Future Improvements
 
-**Issue:** An HR employee reports that the H: drive is missing.
+Planned additions include:
 
-**Investigation:**
-
-```cmd
-net use
-whoami /groups
-```
-
-`net use` confirmed that H: was not mapped.
-
-`whoami /groups` showed that the user's Windows security token did not contain `HR_Users`.
-
-**Root Cause:** The employee was missing the required Active Directory security-group membership.
-
-**Resolution:**
-
-1. Restored `HR_Users` membership.
-2. Signed the user completely out of CLIENT01.
-3. Signed the user back in to generate a fresh security token.
-4. Refreshed Group Policy.
-5. Verified H: returned.
-6. Verified HR file access.
-
-**Result:** ✅ Resolved
-
-See [Lab 07](docs/07-missing-drive-troubleshooting.md) for the complete troubleshooting walkthrough.
+- 🔐 Password Policies
+- 🛡️ Fine-Grained Password Policies
+- 🌐 DHCP Administration
+- 📂 Folder Redirection
+- 🖨️ Print Server Administration
+- 🔍 Event Viewer Investigations
+- 📜 PowerShell Login Scripts
+- 🔑 Windows LAPS
+- 🖥️ WSUS
+- 📊 Group Policy Security Hardening
+- 🛡️ Windows Defender / Endpoint Security
+- 📋 Additional PowerShell Automation
+- 📈 Administrative Reporting
+- 🔎 Additional Help Desk Troubleshooting Scenarios
+- ☁️ Hybrid Microsoft Entra ID Integration
 
 ---
 
-## 🧪 Example Automation Scenario
+# 📊 Repository Statistics
 
-**Request:** Provision several new employees across different departments.
-
-**Input:**
-
-```csv
-FirstName,LastName,Department
-Amanda,Reed,Finance
-Marcus,Lee,HR
-Jessica,Carter,IT
-Brian,Foster,Sales
-```
-
-**Automation:**
-
-```text
-Import CSV
-     ↓
-Process each employee
-     ↓
-Generate username
-     ↓
-Check for duplicates
-     ↓
-Determine department OU
-     ↓
-Create account
-     ↓
-Assign security group
-     ↓
-Log result
-```
-
-**Result:** ✅ Multiple Active Directory accounts provisioned automatically.
-
-See [PowerShell Automation](docs/10-powershell-automation.md) for the complete automation progression.
+| Category | Count |
+|---|---:|
+| Documented Modules / Scenarios | 11 |
+| DNS Troubleshooting Tickets | 2 |
+| Domain Controllers | 1 |
+| Windows Clients | 1 |
+| Linux Documentation Systems | 1 |
+| DNS Servers | 1 |
+| PowerShell Automation Projects | Multiple |
+| Screenshots | Growing |
+| Technologies Used | 10+ |
 
 ---
 
-## 🧠 Key Takeaways
+# 👨‍💻 About the Author
 
-This project demonstrated how several Windows technologies work together to provide identity, authorization, resource access, and automation.
+I created this project to strengthen my Windows Server, Active Directory, networking, PowerShell, Group Policy, and Help Desk troubleshooting skills while building a professional portfolio that demonstrates practical systems administration experience.
 
-A user's access to departmental files may involve:
+Every lab in this repository was completed in a virtualized environment using Oracle VirtualBox and documented with configuration details, troubleshooting procedures, verification steps, and supporting screenshots.
 
-```text
-Active Directory Account
-          |
-          v
-    Security Group
-          |
-          v
- Windows Security Token
-          |
-          v
- Group Policy Preference
-          |
-          v
-   SMB Share Permission
-          |
-          v
-    NTFS Permission
-          |
-          v
-   Departmental Files
-```
-
-PowerShell adds another layer:
-
-```text
-CSV / Technician Input
-          |
-          v
-    PowerShell Script
-          |
-          v
- Active Directory Cmdlets
-          |
-          v
- Automated User Lifecycle
-```
-
-The project reinforced the importance of understanding a manual process before automating it.
-
-Automation does not remove the need for troubleshooting. Scripts must still validate inputs, handle failures, protect credentials, and verify that the intended changes actually occurred.
+My goal is to continue expanding this repository as I develop additional Windows Server, networking, scripting, automation, and cybersecurity skills.
 
 ---
 
-## 🚀 Future Improvements
+# ⭐ Repository Status
 
-Potential future enhancements include:
+**Current Status: ✅ Active Development**
 
-- Advanced PowerShell functions with parameters
-- Script logging with timestamps
-- Automated username collision resolution
-- PowerShell transcript logging
-- Home-directory creation
-- User expiration handling
-- Additional Active Directory security automation
-- Windows Server DHCP
-- Expanded DNS administration
-- Event Viewer troubleshooting
-- Centralized logging and monitoring
-- Additional Help Desk ticket simulations
-- Microsoft Entra ID / Microsoft 365 administration
+Completed areas include:
 
----
+- ✅ Active Directory Setup
+- ✅ Account Lockout Troubleshooting
+- ✅ Secure Department File Sharing
+- ✅ Group Policy Drive Mapping
+- ✅ User Onboarding
+- ✅ Department Transfer
+- ✅ Missing Department Drive Troubleshooting
+- ✅ SMB Share Troubleshooting
+- ✅ PowerShell Active Directory Administration
+- ✅ PowerShell Automation
+- ✅ Bulk User Provisioning
+- ✅ User Offboarding
+- ✅ DNS Administration
+- ✅ Forward and Reverse DNS
+- ✅ DNS PowerShell Administration
+- ✅ DNS Record Auditing
+- ✅ DNS Troubleshooting — Client Misconfiguration
+- ✅ DNS Troubleshooting — Incorrect A Record
 
-## 📁 Repository Structure
-
-```text
-windows-active-directory-helpdesk-lab/
-│
-├── README.md
-├── .gitignore
-│
-├── docs/
-│   ├── 01-active-directory-setup.md
-│   ├── 02-account-lockout.md
-│   ├── 03-file-share-permissions.md
-│   ├── 04-group-policy-drive-mapping.md
-│   ├── 05-user-onboarding.md
-│   ├── 06-department-transfer.md
-│   ├── 07-missing-drive-troubleshooting.md
-│   ├── 08-smb-share-troubleshooting.md
-│   ├── 09-project-summary.md
-│   └── 10-powershell-automation.md
-│
-├── scripts/
-│   ├── New-FinanceUser.ps1
-│   ├── New-DepartmentUser.ps1
-│   ├── Bulk-NewUsers.ps1
-│   ├── Bulk-NewUsers-Logged.ps1
-│   └── Disable-ADUser.ps1
-│
-├── samples/
-│   ├── NewUsers.csv
-│   └── NewUsers-Task7.csv
-│
-└── screenshots/
-    ├── active-directory/
-    ├── file-sharing/
-    ├── group-policy/
-    └── troubleshooting/
-```
-
----
-
-## 📌 Project Status
-
-### Part 1 — Active Directory Help Desk Lab
-**Status:** ✅ Complete
-
-### Part 2 — PowerShell Active Directory Automation
-**Status:** ✅ Complete
-
-The environment remains available for additional Windows administration, networking, security, and automation exercises.
+Additional Windows Server, networking, PowerShell, and security projects will be added as the lab continues to expand.
